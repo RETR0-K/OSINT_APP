@@ -9,13 +9,8 @@ class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'you-will-never-guess'
     
     # API keys
-    HAVEIBEENPWNED_API_KEY = os.environ.get('HAVEIBEENPWNED_API_KEY')
-    DEHASHED_API_KEY = os.environ.get('DEHASHED_API_KEY')
-    BREACHDIRECTORY_API_KEY = os.environ.get('BREACHDIRECTORY_API_KEY')
+    RAPIDAPI_KEY = os.environ.get('RAPIDAPI_KEY')  # The RapidAPI key for all breach APIs
     
     # OpenAI API key for AI analysis features
     OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
     
-    # Database configuration (if needed later)
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'sqlite:///osint.db'
-    SQLALCHEMY_TRACK_MODIFICATIONS = False

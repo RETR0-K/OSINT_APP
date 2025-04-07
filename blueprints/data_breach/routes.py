@@ -1,7 +1,7 @@
 # blueprints/data_breach/routes.py
 from flask import render_template, request, current_app, jsonify
 from blueprints.data_breach import data_breach_bp
-from blueprints.data_breach.utils import check_haveibeenpwned, check_breachdirectory, check_dehashed
+from blueprints.data_breach.utils import check_breach_directory, check_breach_search, check_osint_search
 from datetime import datetime
 
 @data_breach_bp.route('/')
@@ -18,31 +18,35 @@ def check_email():
     results = {
         'email': email,
         'scan_date': datetime.now(),
-        'sources': []
+        'sources': [],
+        'total_breaches': 0
     }
     
-    # Check HaveIBeenPwned
-    hibp_result = check_haveibeenpwned(email, current_app.config['HAVEIBEENPWNED_API_KEY'])
-    if hibp_result:
-        results['sources'].append({
-            'name': 'HaveIBeenPwned',
-            'breaches': hibp_result
-        })
+    # Get API key
+    rapidapi_key = current_app.config.get('RAPIDAPI_KEY')
     
-    # Check BreachDirectory
-    breach_dir_result = check_breachdirectory(email, current_app.config['BREACHDIRECTORY_API_KEY'])
+    # Check BreachDirectory API
+    breach_dir_result = check_breach_directory(email, rapidapi_key)
     if breach_dir_result:
         results['sources'].append({
             'name': 'BreachDirectory',
             'breaches': breach_dir_result
         })
     
-    # Check DeHashed
-    dehashed_result = check_dehashed(email, current_app.config['DEHASHED_API_KEY'])
-    if dehashed_result:
+    # Check BreachSearch API
+    breach_search_result = check_breach_search(email, rapidapi_key)
+    if breach_search_result:
         results['sources'].append({
-            'name': 'DeHashed',
-            'breaches': dehashed_result
+            'name': 'BreachSearch',
+            'breaches': breach_search_result
+        })
+    
+    # Check OSINT Search API
+    osint_search_result = check_osint_search(email, rapidapi_key)
+    if osint_search_result:
+        results['sources'].append({
+            'name': 'OSINT Search',
+            'breaches': osint_search_result.get('breaches', [])
         })
     
     # Count total breaches

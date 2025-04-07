@@ -103,56 +103,48 @@
             <table class="min-w-full divide-y divide-gray-700">
                 <thead class="bg-gray-700">
                     <tr>
-                        {% if source.name == 'HaveIBeenPwned' %}
-                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Breach</th>
-                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Date</th>
-                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Data Types</th>
-                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Description</th>
-                        {% elif source.name == 'BreachDirectory' %}
-                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Source</th>
-                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Date</th>
-                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Password</th>
-                        {% else %}
+                        {% if source.name == 'BreachDirectory' %}
                         <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Source</th>
                         <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Date</th>
                         <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Password</th>
                         <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Hash</th>
+                        {% elif source.name == 'BreachSearch' %}
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Source</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Description</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">First Name</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Last Name</th>
+                        {% elif source.name == 'OSINT Search' %}
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Source</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Password</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">SHA1</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Hash</th>
+                        {% else %}
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Source</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Details</th>
                         {% endif %}
                     </tr>
                 </thead>
                 <tbody class="bg-gray-800 divide-y divide-gray-700">
                     {% for breach in source.breaches %}
                     <tr class="hover:bg-gray-750">
-                        {% if source.name == 'HaveIBeenPwned' %}
-                        <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-white">{{ breach.Name }}</td>
-                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-300">{{ breach.BreachDate }}</td>
-                        <td class="px-4 py-3 text-sm text-gray-300">
-                            <div class="flex flex-wrap">
-                                {% for data_class in breach.DataClasses %}
-                                <span class="px-2 py-1 mr-1 mb-1 text-xs rounded-full bg-gray-700 text-gray-300">
-                                    {{ data_class }}
-                                </span>
-                                {% endfor %}
-                            </div>
-                        </td>
-                        <td class="px-4 py-3 text-sm text-gray-300">
-                            {{ breach.Description|truncate(100) }}
-                            {% if breach.Description|length > 100 %}
-                            <button class="text-blue-400 hover:text-blue-300 ml-1" 
-                                    onclick="alert('{{ breach.Description|replace("'", "\\'") }}')">
-                                Read more
-                            </button>
-                            {% endif %}
-                        </td>
-                        {% elif source.name == 'BreachDirectory' %}
+                        {% if source.name == 'BreachDirectory' %}
                         <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-white">{{ breach.source }}</td>
                         <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-300">{{ breach.last_breach }}</td>
                         <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-300">{{ breach.password }}</td>
-                        {% else %}
-                        <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-white">{{ breach.name }}</td>
-                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-300">{{ breach.breach_date }}</td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-300 font-mono">{{ breach.hash }}</td>
+                        {% elif source.name == 'BreachSearch' %}
+                        <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-white">{{ breach.source }}</td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-300">{{ breach.description }}</td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-300">{{ breach.first_name }}</td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-300">{{ breach.last_name }}</td>
+                        {% elif source.name == 'OSINT Search' %}
+                        <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-white">{{ breach.source }}</td>
                         <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-300">{{ breach.password }}</td>
-                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-300 font-mono">{{ breach.hashed_password }}</td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-300 font-mono">{{ breach.sha1 }}</td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-300 font-mono">{{ breach.hash }}</td>
+                        {% else %}
+                        <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-white">{{ breach.source }}</td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-300">{{ breach }}</td>
                         {% endif %}
                     </tr>
                     {% endfor %}

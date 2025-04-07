@@ -8,6 +8,8 @@ from blueprints.ai_analysis import ai_analysis_bp
 def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
+
+    app.jinja_env.add_extension('jinja2.ext.do')
     
     # Register blueprints
     app.register_blueprint(home_bp, url_prefix='/')
