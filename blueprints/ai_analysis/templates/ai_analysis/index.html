@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+
+{% block title %}OSINT Tracker - AI Analysis{% endblock %}
+
+{% block content %}
+<div class="animate__animated animate__fadeIn">
+    <!-- Header Section -->
+    <div class="bg-gray-800 rounded-lg shadow-lg overflow-hidden mb-8 border border-gray-700">
+        <div class="px-6 py-8">
+            <h1 class="text-3xl font-bold text-white mb-2">AI-Powered Analysis</h1>
+            <p class="text-gray-300 mb-6">
+                Leverage artificial intelligence to generate insights, identify patterns, and assess 
+                risks based on collected OSINT data.
+            </p>
+            
+            <form action="{{ url_for('ai_analysis.analyze') }}" method="post" class="w-full md:max-w-3xl mx-auto">
+                <div class="space-y-6">
+                    <div>
+                        <label for="analysis_type" class="block text-sm font-medium text-gray-300 mb-2">
+                            Analysis Type
+                        </label>
+                        <select name="analysis_type" id="analysis_type" required
+                                class="w-full px-4 py-3 border border-gray-600 bg-gray-700 rounded-md text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                            <option value="" disabled selected>Select analysis type</option>
+                            <option value="username">Username Analysis</option>
+                            <option value="email">Email Breach Analysis</option>
+                            <option value="domain">Domain Analysis</option>
+                            <option value="combined">Combined Analysis</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label for="target" class="block text-sm font-medium text-gray-300 mb-2">
+                            Target (Username, Email, or Domain)
+                        </label>
+                        <input type="text" name="target" id="target" required
+                               class="w-full px-4 py-3 border border-gray-600 bg-gray-700 rounded-md text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                               placeholder="Enter your target">
+                    </div>
+                    
+                    <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-md transition duration-300 ease-in-out transform hover:-translate-y-1">
+                        <i class="fas fa-brain mr-2"></i>Generate AI Analysis
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Features Section -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <div class="bg-gray-800 rounded-lg shadow-lg border border-gray-700 p-6">
+            <div class="bg-green-600 p-3 rounded-full inline-block mb-4">
+                <i class="fas fa-brain text-white text-xl"></i>
+            </div>
+            <h3 class="text-xl font-bold text-white mb-2">AI-Powered Insights</h3>
+            <p class="text-gray-300 mb-4">
+                Our AI analyzes OSINT data to generate meaningful insights and identify patterns that might not be immediately obvious.
+            </p>
+            <ul class="list-disc pl-5 space-y-1 text-gray-300">
+                <li>Pattern recognition</li>
+                <li>Risk assessment</li>
+                <li>Identity correlation</li>
+                <li>Behavioral analysis</li>
+            </ul>
+        </div>
+        
+        <div class="bg-gray-800 rounded-lg shadow-lg border border-gray-700 p-6">
+            <div class="bg-purple-600 p-3 rounded-full inline-block mb-4">
+                <i class="fas fa-shield-alt text-white text-xl"></i>
+            </div>
+            <h3 class="text-xl font-bold text-white mb-2">Security Recommendations</h3>
+            <p class="text-gray-300 mb-4">
+                Based on the AI analysis, receive tailored recommendations to improve security posture and reduce digital risks.
+            </p>
+            <ul class="list-disc pl-5 space-y-1 text-gray-300">
+                <li>Prioritized action items</li>
+                <li>Risk mitigation strategies</li>
+                <li>Privacy enhancement tips</li>
+                <li>Account security best practices</li>
+            </ul>
+        </div>
+    </div>
+    
+    <!-- Analysis Types -->
+    <div class="bg-gray-800 rounded-lg shadow-lg overflow-hidden mb-8 border border-gray-700">
+        <div class="px-6 py-5 border-b border-gray-700">
+            <h3 class="text-xl font-medium text-white">Analysis Types</h3>
+        </div>
+        <div class="px-6 py-6">
+            <div class="space-y-6">
+                <div class="flex flex-col md:flex-row">
+                    <div class="md:w-1/4 flex justify-center mb-4 md:mb-0">
+                        <div class="bg-blue-900 p-6 rounded-lg inline-flex items-center justify-center">
+                            <i class="fas fa-user-tag text-blue-400 text-3xl"></i>
+                        </div>
+                    </div>
+                    <div class="md:w-3/4 md:pl-6">
+                        <h4 class="text-white text-lg font-medium mb-2">Username Analysis</h4>
+                        <p class="text-gray-300">
+                            Analyzes accounts found across various platforms associated with a username. 
+                            Identifies patterns in online presence, activity focus, and potential correlations 
+                            between accounts.
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="border-t border-gray-700 pt-6 flex flex-col md:flex-row">
+                    <div class="md:w-1/4 flex justify-center mb-4 md:mb-0">
+                        <div class="bg-red-900 p-6 rounded-lg inline-flex items-center justify-center">
+                            <i class="fas fa-envelope text-red-400 text-3xl"></i>
+                        </div>
+                    </div>
+                    <div class="md:w-3/4 md:pl-6">
+                        <h4 class="text-white text-lg font-medium mb-2">Email Breach Analysis</h4>
+                        <p class="text-gray-300">
+                            Evaluates data breach exposure for an email address. Assesses the severity of 
+                            breaches, types of exposed data, and provides a comprehensive risk assessment 
+                            based on historical breach data.
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="border-t border-gray-700 pt-6 flex flex-col md:flex-row">
+                    <div class="md:w-1/4 flex justify-center mb-4 md:mb-0">
+                        <div class="bg-purple-900 p-6 rounded-lg inline-flex items-center justify-center">
+                            <i class="fas fa-globe text-purple-400 text-3xl"></i>
+                        </div>
+                    </div>
+                    <div class="md:w-3/4 md:pl-6">
+                        <h4 class="text-white text-lg font-medium mb-2">Domain Analysis</h4>
+                        <p class="text-gray-300">
+                            Examines information about a domain including registration details, hosting 
+                            infrastructure, and security configurations. Provides insights into domain 
+                            ownership, age, and potential vulnerabilities.
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="border-t border-gray-700 pt-6 flex flex-col md:flex-row">
+                    <div class="md:w-1/4 flex justify-center mb-4 md:mb-0">
+                        <div class="bg-green-900 p-6 rounded-lg inline-flex items-center justify-center">
+                            <i class="fas fa-project-diagram text-green-400 text-3xl"></i>
+                        </div>
+                    </div>
+                    <div class="md:w-3/4 md:pl-6">
+                        <h4 class="text-white text-lg font-medium mb-2">Combined Analysis</h4>
+                        <p class="text-gray-300">
+                            Performs a comprehensive analysis across multiple data types including username, 
+                            email, and domain information. Creates a unified intelligence profile with 
+                            cross-referenced insights and holistic security recommendations.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- AI Integration Info -->
+    <div class="bg-gray-800 rounded-lg shadow-lg overflow-hidden mb-8 border border-gray-700">
+        <div class="px-6 py-5 border-b border-gray-700">
+            <h3 class="text-xl font-medium text-white">How Our AI Works</h3>
+        </div>
+        <div class="px-6 py-6">
+            <div class="space-y-4">
+                <p class="text-gray-300">
+                    Our AI analysis engine utilizes advanced natural language processing (NLP) models to process 
+                    OSINT data and generate human-readable insights. The system follows these steps:
+                </p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
+                    <div class="bg-gray-750 p-4 rounded-lg border border-gray-700">
+                        <div class="text-center mb-3">
+                            <div class="bg-gray-700 inline-flex items-center justify-center w-10 h-10 rounded-full mb-2">
+                                <span class="text-green-400 font-bold">1</span>
+                            </div>
+                            <h5 class="text-white font-medium">Data Collection</h5>
+                        </div>
+                        <p class="text-gray-400 text-sm text-center">
+                            Aggregates OSINT data from various sources and formats it for analysis.
+                        </p>
+                    </div>
+                    
+                    <div class="bg-gray-750 p-4 rounded-lg border border-gray-700">
+                        <div class="text-center mb-3">
+                            <div class="bg-gray-700 inline-flex items-center justify-center w-10 h-10 rounded-full mb-2">
+                                <span class="text-green-400 font-bold">2</span>
+                            </div>
+                            <h5 class="text-white font-medium">Pattern Analysis</h5>
+                        </div>
+                        <p class="text-gray-400 text-sm text-center">
+                            Identifies trends, patterns, and correlations across the collected data points.
+                        </p>
+                    </div>
+                    
+                    <div class="bg-gray-750 p-4 rounded-lg border border-gray-700">
+                        <div class="text-center mb-3">
+                            <div class="bg-gray-700 inline-flex items-center justify-center w-10 h-10 rounded-full mb-2">
+                                <span class="text-green-400 font-bold">3</span>
+                            </div>
+                            <h5 class="text-white font-medium">Risk Assessment</h5>
+                        </div>
+                        <p class="text-gray-400 text-sm text-center">
+                            Evaluates security implications and calculates risk scores based on findings.
+                        </p>
+                    </div>
+                    
+                    <div class="bg-gray-750 p-4 rounded-lg border border-gray-700">
+                        <div class="text-center mb-3">
+                            <div class="bg-gray-700 inline-flex items-center justify-center w-10 h-10 rounded-full mb-2">
+                                <span class="text-green-400 font-bold">4</span>
+                            </div>
+                            <h5 class="text-white font-medium">Recommendation</h5>
+                        </div>
+                        <p class="text-gray-400 text-sm text-center">
+                            Generates actionable security recommendations prioritized by risk level.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

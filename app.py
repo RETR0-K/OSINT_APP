@@ -10,7 +10,7 @@ def create_app(config_class=Config):
     app.config.from_object(config_class)
     
     # Register blueprints
-    app.register_blueprint(home_bp)
+    app.register_blueprint(home_bp, url_prefix='/')
     app.register_blueprint(data_breach_bp, url_prefix='/data-breach')
     app.register_blueprint(username_search_bp, url_prefix='/username-search')
     app.register_blueprint(ai_analysis_bp, url_prefix='/ai-analysis')
