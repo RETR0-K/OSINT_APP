@@ -13,7 +13,10 @@
                 We search multiple databases to find if your information has been compromised.
             </p>
             
-            <form action="{{ url_for('data_breach.check_email') }}" method="post" class="w-full md:max-w-2xl mx-auto">
+            <form action="{{ url_for('data_breach.check_email') }}" method="post" class="w-full md:max-w-2xl mx-auto"
+                  data-loading="true"
+                  data-loading-message="Checking data breaches..."
+                  data-loading-details="We're searching multiple data breach databases. This may take a few moments.">
                 <div class="flex flex-col md:flex-row">
                     <div class="flex-grow mb-4 md:mb-0 md:mr-4">
                         <label for="email" class="block text-sm font-medium text-gray-300 mb-2">
@@ -41,8 +44,8 @@
             </div>
             <h3 class="text-xl font-bold text-white mb-2">Multiple Data Sources</h3>
             <p class="text-gray-300">
-                We check your email against multiple breach databases including HaveIBeenPwned, 
-                BreachDirectory, and DeHashed.
+                We check your email against multiple breach databases including BreachDirectory, 
+                BreachSearch, and OSINT Search.
             </p>
         </div>
         
@@ -89,7 +92,7 @@
                     <h4 class="text-lg font-medium text-white mb-2">How do you find data breaches?</h4>
                     <p class="text-gray-300">
                         We use multiple APIs to search known data breach repositories. Our service queries 
-                        HaveIBeenPwned, BreachDirectory, DeHashed, and other databases to provide a comprehensive 
+                        BreachDirectory, BreachSearch, OSINT Search, and other databases to provide a comprehensive 
                         view of where your information may have been exposed.
                     </p>
                 </div>
@@ -118,4 +121,10 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Any additional page-specific JavaScript can go here
+</script>
 {% endblock %}
