@@ -1,0 +1,336 @@
+{% extends "base.html" %}
+
+{% block title %}OSINT Tracker - Username Results{% endblock %}
+
+{% block content %}
+<div class="animate__animated animate__fadeIn">
+    <!-- Header Section -->
+    <div class="bg-gray-800 rounded-lg shadow-lg overflow-hidden mb-8 border border-gray-700">
+        <div class="px-6 py-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-2xl font-bold text-white">Username Search Results</h1>
+                    <p class="text-gray-300 mt-1">
+                        Showing results for <span class="text-purple-400 font-semibold">{{ results.username }}</span>
+                    </p>
+                </div>
+                <div>
+                    <span class="text-sm text-gray-400">Scan Date: {{ results.scan_date.strftime('%b %d, %Y %H:%M') }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Summary Card -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="md:col-span-2 bg-gray-800 rounded-lg shadow-lg overflow-hidden border border-gray-700">
+            <div class="px-6 py-5 border-b border-gray-700">
+                <h3 class="text-lg font-medium text-white">Account Summary</h3>
+            </div>
+            <div class="px-6 py-6">
+                <div class="flex flex-col md:flex-row items-center">
+                    <div class="w-full">
+                        <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                            <div class="bg-gray-700 rounded-lg p-4 border border-gray-600">
+                                <div class="flex items-center">
+                                    <div class="bg-purple-600 p-2 rounded-full mr-3">
+                                        <i class="fas fa-user-tag text-white"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm text-gray-400">Total Accounts</p>
+                                        <p class="text-lg text-white font-semibold">{{ results.total_found }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-gray-700 rounded-lg p-4 border border-gray-600">
+                                <div class="flex items-center">
+                                    <div class="bg-blue-600 p-2 rounded-full mr-3">
+                                        <i class="fas fa-search text-white"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm text-gray-400">Sources</p>
+                                        <p class="text-lg text-white font-semibold">
+                                            {% if results.sherlock %}Sherlock{% endif %}
+                                            {% if results.sherlock and results.whatsmyname %} + {% endif %}
+                                            {% if results.whatsmyname %}WhatsMyName{% endif %}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-gray-700 rounded-lg p-4 border border-gray-600">
+                                <div class="flex items-center">
+                                    <div class="p-2 rounded-full mr-3 
+                                                {% if results.risk_score < 25 %}bg-green-600
+                                                {% elif results.risk_score < 50 %}bg-yellow-600
+                                                {% elif results.risk_score < 75 %}bg-orange-600
+                                                {% else %}bg-red-600{% endif %}">
+                                        <i class="fas fa-shield-alt text-white"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm text-gray-400">Digital Footprint</p>
+                                        <p class="text-lg text-white font-semibold">{{ results.risk_score }}/100</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Categories Distribution -->
+                        <div class="mt-6">
+                            <h4 class="text-white font-medium mb-3">Account Distribution</h4>
+                            <div class="space-y-3">
+                                {% for category, count in results.categories.items() %}
+                                <div>
+                                    <div class="flex justify-between mb-1">
+                                        <span class="text-sm text-gray-300">{{ category }}</span>
+                                        <span class="text-sm text-gray-400">{{ count }} accounts</span>
+                                    </div>
+                                    <div class="w-full bg-gray-700 rounded-full h-2">
+                                        <div class="h-2 rounded-full 
+                                                   {% if category == 'Social Media' %}bg-blue-500
+                                                   {% elif category == 'Professional' %}bg-green-500
+                                                   {% elif category == 'Forums' %}bg-yellow-500
+                                                   {% elif category == 'Gaming' %}bg-red-500
+                                                   {% elif category == 'Media Sharing' %}bg-purple-500
+                                                   {% elif category == 'Dating' %}bg-pink-500
+                                                   {% elif category == 'Shopping' %}bg-indigo-500
+                                                   {% elif category == 'Tech' %}bg-teal-500
+                                                   {% else %}bg-gray-500{% endif %}" 
+                                             style="width: {{ (count / results.total_found * 100) if results.total_found > 0 else 0 }}%"></div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-gray-800 rounded-lg shadow-lg overflow-hidden border border-gray-700">
+            <div class="px-6 py-5 border-b border-gray-700">
+                <h3 class="text-lg font-medium text-white">Digital Footprint</h3>
+            </div>
+            <div class="px-6 py-6 flex flex-col items-center">
+                <div class="relative inline-block w-32 h-32 mb-4">
+                    <svg class="w-full h-full" viewBox="0 0 36 36">
+                        <path class="stroke-current text-gray-600" stroke-width="2" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"></path>
+                        <path class="stroke-current {% if results.risk_score < 25 %}text-green-500
+                                   {% elif results.risk_score < 50 %}text-yellow-500
+                                   {% elif results.risk_score < 75 %}text-orange-500
+                                   {% else %}text-red-500{% endif %}"
+                              stroke-width="2" fill="none" stroke-linecap="round"
+                              stroke-dasharray="{{ results.risk_score }}, 100"
+                              d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"></path>
+                        <text x="18" y="20.5" class="fill-current text-white text-2xl font-semibold" text-anchor="middle">{{ results.risk_score }}</text>
+                    </svg>
+                </div>
+                
+                <div class="text-center mb-4">
+                    <h4 class="text-white font-medium">
+                        {% if results.risk_score < 25 %}
+                            Low Exposure
+                        {% elif results.risk_score < 50 %}
+                            Moderate Exposure
+                        {% elif results.risk_score < 75 %}
+                            High Exposure
+                        {% else %}
+                            Very High Exposure
+                        {% endif %}
+                    </h4>
+                </div>
+                
+                <div class="text-gray-300 text-sm">
+                    {% if results.risk_score < 25 %}
+                        This username has minimal online presence. Limited accounts were found across platforms.
+                    {% elif results.risk_score < 50 %}
+                        This username has a moderate online presence with several accounts found across different categories.
+                    {% elif results.risk_score < 75 %}
+                        This username has a significant online presence with many accounts across varied platforms.
+                    {% else %}
+                        This username has an extensive online presence with numerous accounts found across many different platforms.
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Results Table -->
+    <div class="bg-gray-800 rounded-lg shadow-lg overflow-hidden mb-8 border border-gray-700">
+        <div class="px-6 py-5 border-b border-gray-700 flex justify-between items-center">
+            <h3 class="text-lg font-medium text-white">Found Accounts ({{ results.total_found }})</h3>
+            
+            <div class="flex space-x-2">
+                <button class="px-3 py-1 text-sm bg-gray-700 hover:bg-gray-600 text-white rounded-md">
+                    <i class="fas fa-download mr-1"></i> Export
+                </button>
+                <button class="px-3 py-1 text-sm bg-gray-700 hover:bg-gray-600 text-white rounded-md">
+                    <i class="fas fa-filter mr-1"></i> Filter
+                </button>
+            </div>
+        </div>
+        
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-700">
+                <thead class="bg-gray-700">
+                    <tr>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Site</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Category</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Source</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-gray-800 divide-y divide-gray-700">
+                    {% for result in results.combined_results %}
+                    <tr class="hover:bg-gray-750">
+                        <td class="px-4 py-3 whitespace-nowrap">
+                            <div class="flex items-center">
+                                <div class="mr-3 text-xl
+                                            {% if result.site_name == 'Twitter' %}text-blue-400
+                                            {% elif result.site_name == 'Facebook' %}text-blue-600
+                                            {% elif result.site_name == 'Instagram' %}text-pink-500
+                                            {% elif result.site_name == 'LinkedIn' %}text-blue-500
+                                            {% elif result.site_name == 'GitHub' %}text-gray-300
+                                            {% elif result.site_name == 'Reddit' %}text-orange-500
+                                            {% elif result.site_name == 'YouTube' %}text-red-500
+                                            {% elif result.site_name == 'Steam' %}text-blue-400
+                                            {% elif result.site_name == 'Twitch' %}text-purple-400
+                                            {% else %}text-gray-400{% endif %}">
+                                    {% if result.site_name == 'Twitter' %}<i class="fab fa-twitter"></i>
+                                    {% elif result.site_name == 'Facebook' %}<i class="fab fa-facebook"></i>
+                                    {% elif result.site_name == 'Instagram' %}<i class="fab fa-instagram"></i>
+                                    {% elif result.site_name == 'LinkedIn' %}<i class="fab fa-linkedin"></i>
+                                    {% elif result.site_name == 'GitHub' %}<i class="fab fa-github"></i>
+                                    {% elif result.site_name == 'Reddit' %}<i class="fab fa-reddit"></i>
+                                    {% elif result.site_name == 'YouTube' %}<i class="fab fa-youtube"></i>
+                                    {% elif result.site_name == 'Steam' %}<i class="fab fa-steam"></i>
+                                    {% elif result.site_name == 'Twitch' %}<i class="fab fa-twitch"></i>
+                                    {% else %}<i class="fas fa-globe"></i>{% endif %}
+                                </div>
+                                <div class="text-sm font-medium text-white">{{ result.site_name }}</div>
+                            </div>
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap">
+                            <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full
+                                       {% if result.category == 'Social Media' %}bg-blue-900 text-blue-300
+                                       {% elif result.category == 'Professional' %}bg-green-900 text-green-300
+                                       {% elif result.category == 'Forums' %}bg-yellow-900 text-yellow-300
+                                       {% elif result.category == 'Gaming' %}bg-red-900 text-red-300
+                                       {% elif result.category == 'Media Sharing' %}bg-purple-900 text-purple-300
+                                       {% elif result.category == 'Dating' %}bg-pink-900 text-pink-300
+                                       {% elif result.category == 'Shopping' %}bg-indigo-900 text-indigo-300
+                                       {% elif result.category == 'Tech' %}bg-teal-900 text-teal-300
+                                       {% else %}bg-gray-900 text-gray-300{% endif %}">
+                                {{ result.category }}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-300">
+                            {{ result.source }}
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm font-medium">
+                            <a href="{{ result.url }}" target="_blank" class="text-indigo-400 hover:text-indigo-300 mr-3">
+                                <i class="fas fa-external-link-alt mr-1"></i> Visit
+                            </a>
+                            <a href="#" class="text-blue-400 hover:text-blue-300">
+                                <i class="fas fa-info-circle mr-1"></i> Details
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- No Results Found -->
+    {% if results.total_found == 0 %}
+    <div class="bg-gray-800 rounded-lg shadow-lg overflow-hidden mb-8 border border-gray-700 p-8 text-center">
+        <div class="bg-gray-700 p-4 rounded-full inline-block mb-4">
+            <i class="fas fa-search text-gray-400 text-2xl"></i>
+        </div>
+        <h3 class="text-xl font-bold text-white mb-2">No Accounts Found</h3>
+        <p class="text-gray-300 text-lg mb-4">
+            We couldn't find any accounts associated with <span class="text-purple-400 font-semibold">{{ results.username }}</span>
+        </p>
+        <p class="text-gray-400 mb-6">
+            This could mean that the username is not in use, or our tools weren't able to discover the accounts.
+            Try searching for variations of this username or check for typos.
+        </p>
+        <a href="{{ url_for('username_search.index') }}" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-6 rounded-md transition duration-300 ease-in-out">
+            Try Another Username
+        </a>
+    </div>
+    {% endif %}
+    
+    <!-- Recommendations -->
+    <div class="bg-gray-800 rounded-lg shadow-lg overflow-hidden mb-8 border border-gray-700">
+        <div class="px-6 py-4 bg-gray-750 border-b border-gray-700">
+            <h3 class="text-lg font-medium text-white">Recommendations</h3>
+        </div>
+        <div class="px-6 py-6">
+            <div class="space-y-4">
+                <div class="flex items-start">
+                    <div class="flex-shrink-0 mt-1">
+                        <i class="fas fa-search-plus text-blue-500 mr-3"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-white font-medium">Explore Variations</h4>
+                        <p class="text-gray-300 mt-1">
+                            Try searching for common variations of this username like adding numbers (username123), 
+                            underscores (user_name), or dots (user.name).
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="flex items-start">
+                    <div class="flex-shrink-0 mt-1">
+                        <i class="fas fa-envelope text-blue-500 mr-3"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-white font-medium">Check Email Breaches</h4>
+                        <p class="text-gray-300 mt-1">
+                            If you know the email associated with this username, check for data breaches that might
+                            reveal additional information.
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="flex items-start">
+                    <div class="flex-shrink-0 mt-1">
+                        <i class="fas fa-chart-network text-blue-500 mr-3"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-white font-medium">Run AI Analysis</h4>
+                        <p class="text-gray-300 mt-1">
+                            Use our AI analysis feature to generate insights and find patterns in the discovered accounts.
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="flex items-start">
+                    <div class="flex-shrink-0 mt-1">
+                        <i class="fas fa-calendar-alt text-blue-500 mr-3"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-white font-medium">Schedule Regular Checks</h4>
+                        <p class="text-gray-300 mt-1">
+                            Online presence can change over time. Schedule regular searches to monitor any new accounts.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Action Buttons -->
+    <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 mb-8">
+        <a href="{{ url_for('username_search.index') }}" class="flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 md:text-lg transition duration-300 ease-in-out">
+            <i class="fas fa-search mr-2"></i> Search Another Username
+        </a>
+        <a href="{{ url_for('ai_analysis.index') }}" class="flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-green-600 hover:bg-green-700 md:text-lg transition duration-300 ease-in-out">
+            <i class="fas fa-brain mr-2"></i> Run AI Analysis
+        </a>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block title %}OSINT Tracker - Data Breach Search{% endblock %}
+
+{% block content %}
+<div class="animate__animated animate__fadeIn">
+    <!-- Header Section -->
+    <div class="bg-gray-800 rounded-lg shadow-lg overflow-hidden mb-8 border border-gray-700">
+        <div class="px-6 py-8">
+            <h1 class="text-3xl font-bold text-white mb-2">Data Breach Search</h1>
+            <p class="text-gray-300 mb-6">
+                Check if your email address or domain has been exposed in a data breach. 
+                We search multiple databases to find if your information has been compromised.
+            </p>
+            
+            <form action="{{ url_for('data_breach.check_email') }}" method="post" class="w-full md:max-w-2xl mx-auto">
+                <div class="flex flex-col md:flex-row">
+                    <div class="flex-grow mb-4 md:mb-0 md:mr-4">
+                        <label for="email" class="block text-sm font-medium text-gray-300 mb-2">
+                            Email Address or Domain
+                        </label>
+                        <input type="text" name="email" id="email" required
+                               class="w-full px-4 py-3 border border-gray-600 bg-gray-700 rounded-md text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                               placeholder="example@domain.com or domain.com">
+                    </div>
+                    <div class="flex items-end">
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-md transition duration-300 ease-in-out transform hover:-translate-y-1">
+                            <i class="fas fa-search mr-2"></i>Search Breaches
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Features Section -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="bg-gray-800 rounded-lg shadow-lg border border-gray-700 p-6">
+            <div class="bg-blue-600 p-3 rounded-full inline-block mb-4">
+                <i class="fas fa-database text-white text-xl"></i>
+            </div>
+            <h3 class="text-xl font-bold text-white mb-2">Multiple Data Sources</h3>
+            <p class="text-gray-300">
+                We check your email against multiple breach databases including HaveIBeenPwned, 
+                BreachDirectory, and DeHashed.
+            </p>
+        </div>
+        
+        <div class="bg-gray-800 rounded-lg shadow-lg border border-gray-700 p-6">
+            <div class="bg-purple-600 p-3 rounded-full inline-block mb-4">
+                <i class="fas fa-key text-white text-xl"></i>
+            </div>
+            <h3 class="text-xl font-bold text-white mb-2">Password Exposure</h3>
+            <p class="text-gray-300">
+                Discover if your passwords have been exposed in data breaches and get recommendations 
+                to improve your security.
+            </p>
+        </div>
+        
+        <div class="bg-gray-800 rounded-lg shadow-lg border border-gray-700 p-6">
+            <div class="bg-green-600 p-3 rounded-full inline-block mb-4">
+                <i class="fas fa-shield-alt text-white text-xl"></i>
+            </div>
+            <h3 class="text-xl font-bold text-white mb-2">Risk Assessment</h3>
+            <p class="text-gray-300">
+                Get an overall risk assessment score based on the number and severity of breaches 
+                your email has been found in.
+            </p>
+        </div>
+    </div>
+    
+    <!-- FAQ Section -->
+    <div class="bg-gray-800 rounded-lg shadow-lg overflow-hidden mb-8 border border-gray-700">
+        <div class="px-6 py-5 border-b border-gray-700">
+            <h3 class="text-xl font-medium text-white">Frequently Asked Questions</h3>
+        </div>
+        <div class="px-6 py-5">
+            <div class="space-y-6">
+                <div>
+                    <h4 class="text-lg font-medium text-white mb-2">What is a data breach?</h4>
+                    <p class="text-gray-300">
+                        A data breach occurs when sensitive, protected or confidential data is copied, transmitted, 
+                        viewed, stolen or used by an individual unauthorized to do so. This can include personal information, 
+                        login credentials, financial data, and more.
+                    </p>
+                </div>
+                
+                <div>
+                    <h4 class="text-lg font-medium text-white mb-2">How do you find data breaches?</h4>
+                    <p class="text-gray-300">
+                        We use multiple APIs to search known data breach repositories. Our service queries 
+                        HaveIBeenPwned, BreachDirectory, DeHashed, and other databases to provide a comprehensive 
+                        view of where your information may have been exposed.
+                    </p>
+                </div>
+                
+                <div>
+                    <h4 class="text-lg font-medium text-white mb-2">What should I do if my data is found in a breach?</h4>
+                    <p class="text-gray-300">
+                        If your data is found in a breach, you should:
+                        <ul class="list-disc pl-5 mt-2 space-y-1">
+                            <li>Change your password for the affected service immediately</li>
+                            <li>Change passwords on other services where you use the same or similar password</li>
+                            <li>Enable two-factor authentication where available</li>
+                            <li>Monitor your accounts for suspicious activity</li>
+                        </ul>
+                    </p>
+                </div>
+                
+                <div>
+                    <h4 class="text-lg font-medium text-white mb-2">Is my search information saved?</h4>
+                    <p class="text-gray-300">
+                        By default, we do not store the email addresses or domains you search for. Your search data 
+                        is only used to query the breach databases and is not saved or shared with third parties.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

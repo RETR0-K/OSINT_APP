@@ -1,0 +1,252 @@
+{% extends "base.html" %}
+
+{% block title %}OSINT Tracker - Data Breach Results{% endblock %}
+
+{% block content %}
+<div class="animate__animated animate__fadeIn">
+    <!-- Header Section -->
+    <div class="bg-gray-800 rounded-lg shadow-lg overflow-hidden mb-8 border border-gray-700">
+        <div class="px-6 py-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-2xl font-bold text-white">Data Breach Results</h1>
+                    <p class="text-gray-300 mt-1">
+                        Showing results for <span class="text-blue-400 font-semibold">{{ results.email }}</span>
+                    </p>
+                </div>
+                <div>
+                    <span class="text-sm text-gray-400">Scan Date: {{ results.scan_date.strftime('%b %d, %Y %H:%M') }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Summary Card -->
+    <div class="bg-gray-800 rounded-lg shadow-lg overflow-hidden mb-8 border border-gray-700">
+        <div class="px-6 py-6">
+            <div class="flex flex-col md:flex-row items-center">
+                <div class="w-full md:w-3/4">
+                    <h2 class="text-xl font-semibold text-white mb-4">Summary</h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="bg-gray-700 rounded-lg p-4 border border-gray-600">
+                            <div class="flex items-center">
+                                <div class="bg-blue-600 p-2 rounded-full mr-3">
+                                    <i class="fas fa-database text-white"></i>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-400">Sources Checked</p>
+                                    <p class="text-lg text-white font-semibold">{{ results.sources|length }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-gray-700 rounded-lg p-4 border border-gray-600">
+                            <div class="flex items-center">
+                                <div class="bg-red-600 p-2 rounded-full mr-3">
+                                    <i class="fas fa-exclamation-triangle text-white"></i>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-400">Breaches Found</p>
+                                    <p class="text-lg text-white font-semibold">{{ results.total_breaches }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-gray-700 rounded-lg p-4 border border-gray-600">
+                            <div class="flex items-center">
+                                <div class="p-2 rounded-full mr-3 
+                                            {% if results.risk_score < 25 %}bg-green-600
+                                            {% elif results.risk_score < 50 %}bg-yellow-600
+                                            {% elif results.risk_score < 75 %}bg-orange-600
+                                            {% else %}bg-red-600{% endif %}">
+                                    <i class="fas fa-shield-alt text-white"></i>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-400">Risk Score</p>
+                                    <p class="text-lg text-white font-semibold">{{ results.risk_score }}/100</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="w-full md:w-1/4 mt-6 md:mt-0 flex justify-center">
+                    <div class="relative inline-block w-32 h-32">
+                        <svg class="w-full h-full" viewBox="0 0 36 36">
+                            <path class="stroke-current text-gray-600" stroke-width="2" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"></path>
+                            <path class="stroke-current {% if results.risk_score < 25 %}text-green-500
+                                       {% elif results.risk_score < 50 %}text-yellow-500
+                                       {% elif results.risk_score < 75 %}text-orange-500
+                                       {% else %}text-red-500{% endif %}"
+                                  stroke-width="2" fill="none" stroke-linecap="round"
+                                  stroke-dasharray="{{ results.risk_score }}, 100"
+                                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"></path>
+                            <text x="18" y="20.5" class="fill-current text-white text-2xl font-semibold" text-anchor="middle">{{ results.risk_score }}</text>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Results by Source -->
+    {% for source in results.sources %}
+    <div class="bg-gray-800 rounded-lg shadow-lg overflow-hidden mb-6 border border-gray-700">
+        <div class="px-6 py-4 bg-gray-750 border-b border-gray-700">
+            <h3 class="text-lg font-medium text-white">
+                {{ source.name }} <span class="text-sm text-gray-400">({{ source.breaches|length }} breach{% if source.breaches|length != 1 %}es{% endif %})</span>
+            </h3>
+        </div>
+        
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-700">
+                <thead class="bg-gray-700">
+                    <tr>
+                        {% if source.name == 'HaveIBeenPwned' %}
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Breach</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Date</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Data Types</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Description</th>
+                        {% elif source.name == 'BreachDirectory' %}
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Source</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Date</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Password</th>
+                        {% else %}
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Source</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Date</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Password</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Hash</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody class="bg-gray-800 divide-y divide-gray-700">
+                    {% for breach in source.breaches %}
+                    <tr class="hover:bg-gray-750">
+                        {% if source.name == 'HaveIBeenPwned' %}
+                        <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-white">{{ breach.Name }}</td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-300">{{ breach.BreachDate }}</td>
+                        <td class="px-4 py-3 text-sm text-gray-300">
+                            <div class="flex flex-wrap">
+                                {% for data_class in breach.DataClasses %}
+                                <span class="px-2 py-1 mr-1 mb-1 text-xs rounded-full bg-gray-700 text-gray-300">
+                                    {{ data_class }}
+                                </span>
+                                {% endfor %}
+                            </div>
+                        </td>
+                        <td class="px-4 py-3 text-sm text-gray-300">
+                            {{ breach.Description|truncate(100) }}
+                            {% if breach.Description|length > 100 %}
+                            <button class="text-blue-400 hover:text-blue-300 ml-1" 
+                                    onclick="alert('{{ breach.Description|replace("'", "\\'") }}')">
+                                Read more
+                            </button>
+                            {% endif %}
+                        </td>
+                        {% elif source.name == 'BreachDirectory' %}
+                        <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-white">{{ breach.source }}</td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-300">{{ breach.last_breach }}</td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-300">{{ breach.password }}</td>
+                        {% else %}
+                        <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-white">{{ breach.name }}</td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-300">{{ breach.breach_date }}</td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-300">{{ breach.password }}</td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-300 font-mono">{{ breach.hashed_password }}</td>
+                        {% endif %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% else %}
+    <div class="bg-gray-800 rounded-lg shadow-lg overflow-hidden mb-8 border border-gray-700 p-8 text-center">
+        <div class="bg-green-600 p-4 rounded-full inline-block mb-4">
+            <i class="fas fa-check text-white text-2xl"></i>
+        </div>
+        <h3 class="text-xl font-bold text-white mb-2">Good News!</h3>
+        <p class="text-gray-300 text-lg mb-4">
+            No data breaches were found for <span class="text-blue-400 font-semibold">{{ results.email }}</span>
+        </p>
+        <p class="text-gray-400 mb-6">
+            Your email was not found in any of our data breach sources. However, this doesn't mean your information 
+            hasn't been compromised in breaches we don't have access to.
+        </p>
+        <a href="{{ url_for('data_breach.index') }}" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-md transition duration-300 ease-in-out">
+            Check Another Email
+        </a>
+    </div>
+    {% endfor %}
+    
+    <!-- Recommendations -->
+    <div class="bg-gray-800 rounded-lg shadow-lg overflow-hidden mb-8 border border-gray-700">
+        <div class="px-6 py-4 bg-gray-750 border-b border-gray-700">
+            <h3 class="text-lg font-medium text-white">Recommendations</h3>
+        </div>
+        <div class="px-6 py-6">
+            <div class="space-y-4">
+                <div class="flex items-start">
+                    <div class="flex-shrink-0 mt-1">
+                        <i class="fas fa-key text-blue-500 mr-3"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-white font-medium">Update Your Passwords</h4>
+                        <p class="text-gray-300 mt-1">
+                            Change passwords for any accounts associated with this email, especially if they use the same 
+                            password as any breached accounts.
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="flex items-start">
+                    <div class="flex-shrink-0 mt-1">
+                        <i class="fas fa-lock text-blue-500 mr-3"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-white font-medium">Enable Two-Factor Authentication</h4>
+                        <p class="text-gray-300 mt-1">
+                            Add an extra layer of security to your accounts by enabling two-factor authentication where available.
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="flex items-start">
+                    <div class="flex-shrink-0 mt-1">
+                        <i class="fas fa-eye-slash text-blue-500 mr-3"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-white font-medium">Use Unique Passwords</h4>
+                        <p class="text-gray-300 mt-1">
+                            Use a unique password for each account to limit the impact of any single breach.
+                            Consider using a password manager to help create and store strong, unique passwords.
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="flex items-start">
+                    <div class="flex-shrink-0 mt-1">
+                        <i class="fas fa-bell text-blue-500 mr-3"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-white font-medium">Monitor Your Accounts</h4>
+                        <p class="text-gray-300 mt-1">
+                            Regularly check your accounts for unusual activity and set up alerts where possible.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Action Buttons -->
+    <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 mb-8">
+        <a href="{{ url_for('data_breach.index') }}" class="flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 md:text-lg transition duration-300 ease-in-out">
+            <i class="fas fa-search mr-2"></i> Check Another Email
+        </a>
+        <a href="{{ url_for('ai_analysis.index') }}" class="flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-green-600 hover:bg-green-700 md:text-lg transition duration-300 ease-in-out">
+            <i class="fas fa-brain mr-2"></i> Run AI Analysis
+        </a>
+    </div>
+</div>
+{% endblock %}

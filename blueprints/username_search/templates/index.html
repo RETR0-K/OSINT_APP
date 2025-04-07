@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+
+{% block title %}OSINT Tracker - Username Search{% endblock %}
+
+{% block content %}
+<div class="animate__animated animate__fadeIn">
+    <!-- Header Section -->
+    <div class="bg-gray-800 rounded-lg shadow-lg overflow-hidden mb-8 border border-gray-700">
+        <div class="px-6 py-8">
+            <h1 class="text-3xl font-bold text-white mb-2">Username Search</h1>
+            <p class="text-gray-300 mb-6">
+                Discover online accounts and profiles associated with a username across various platforms.
+                We use Sherlock and WhatsMyName tools to provide comprehensive results.
+            </p>
+            
+            <form action="{{ url_for('username_search.search') }}" method="post" class="w-full md:max-w-2xl mx-auto">
+                <div class="flex flex-col md:flex-row">
+                    <div class="flex-grow mb-4 md:mb-0 md:mr-4">
+                        <label for="username" class="block text-sm font-medium text-gray-300 mb-2">
+                            Username
+                        </label>
+                        <input type="text" name="username" id="username" required
+                               class="w-full px-4 py-3 border border-gray-600 bg-gray-700 rounded-md text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                               placeholder="Enter a username">
+                    </div>
+                    <div class="flex items-end">
+                        <button type="submit" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-md transition duration-300 ease-in-out transform hover:-translate-y-1">
+                            <i class="fas fa-search mr-2"></i>Search Accounts
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Features Section -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <div class="bg-gray-800 rounded-lg shadow-lg border border-gray-700 p-6">
+            <div class="bg-purple-600 p-3 rounded-full inline-block mb-4">
+                <i class="fas fa-user-secret text-white text-xl"></i>
+            </div>
+            <h3 class="text-xl font-bold text-white mb-2">Sherlock Integration</h3>
+            <p class="text-gray-300 mb-4">
+                We use Sherlock to search for usernames across hundreds of social media platforms and websites.
+            </p>
+            <ul class="list-disc pl-5 space-y-1 text-gray-300">
+                <li>Fast parallel searching</li>
+                <li>Checks username availability</li>
+                <li>Finds existing profiles</li>
+                <li>Categorizes results</li>
+            </ul>
+        </div>
+        
+        <div class="bg-gray-800 rounded-lg shadow-lg border border-gray-700 p-6">
+            <div class="bg-blue-600 p-3 rounded-full inline-block mb-4">
+                <i class="fas fa-question-circle text-white text-xl"></i>
+            </div>
+            <h3 class="text-xl font-bold text-white mb-2">WhatsMyName Integration</h3>
+            <p class="text-gray-300 mb-4">
+                WhatsMyName extends our search capabilities to find additional platforms that Sherlock might miss.
+            </p>
+            <ul class="list-disc pl-5 space-y-1 text-gray-300">
+                <li>Complementary to Sherlock</li>
+                <li>Covers niche platforms</li>
+                <li>Constantly updated database</li>
+                <li>Finds accounts across various categories</li>
+            </ul>
+        </div>
+    </div>
+    
+    <!-- How It Works Section -->
+    <div class="bg-gray-800 rounded-lg shadow-lg overflow-hidden mb-8 border border-gray-700">
+        <div class="px-6 py-5 border-b border-gray-700">
+            <h3 class="text-xl font-medium text-white">How It Works</h3>
+        </div>
+        <div class="px-6 py-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="text-center">
+                    <div class="bg-gray-700 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <span class="text-2xl font-bold text-purple-400">1</span>
+                    </div>
+                    <h4 class="text-lg font-medium text-white mb-2">Enter Username</h4>
+                    <p class="text-gray-300">
+                        Provide a username you want to search for across multiple platforms.
+                    </p>
+                </div>
+                
+                <div class="text-center">
+                    <div class="bg-gray-700 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <span class="text-2xl font-bold text-purple-400">2</span>
+                    </div>
+                    <h4 class="text-lg font-medium text-white mb-2">Parallel Search</h4>
+                    <p class="text-gray-300">
+                        Our tools search hundreds of websites simultaneously to find matching accounts.
+                    </p>
+                </div>
+                
+                <div class="text-center">
+                    <div class="bg-gray-700 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <span class="text-2xl font-bold text-purple-400">3</span>
+                    </div>
+                    <h4 class="text-lg font-medium text-white mb-2">View Results</h4>
+                    <p class="text-gray-300">
+                        Get a comprehensive report of all found accounts categorized by platform type.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Tips Section -->
+    <div class="bg-gray-800 rounded-lg shadow-lg overflow-hidden mb-8 border border-gray-700">
+        <div class="px-6 py-5 border-b border-gray-700">
+            <h3 class="text-xl font-medium text-white">Username Search Tips</h3>
+        </div>
+        <div class="px-6 py-6">
+            <div class="space-y-4">
+                <div class="flex items-start">
+                    <div class="flex-shrink-0 mt-1">
+                        <i class="fas fa-lightbulb text-yellow-500 mr-3"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-white font-medium">Try Common Variations</h4>
+                        <p class="text-gray-300 mt-1">
+                            People often use the same username across platforms with slight variations. Try searching 
+                            for common modifications like adding numbers, underscores, or dots.
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="flex items-start">
+                    <div class="flex-shrink-0 mt-1">
+                        <i class="fas fa-lightbulb text-yellow-500 mr-3"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-white font-medium">Combine Search Methods</h4>
+                        <p class="text-gray-300 mt-1">
+                            For a more comprehensive search, combine username searches with email breaches and other 
+                            OSINT techniques to build a complete profile.
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="flex items-start">
+                    <div class="flex-shrink-0 mt-1">
+                        <i class="fas fa-lightbulb text-yellow-500 mr-3"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-white font-medium">Check Aliases</h4>
+                        <p class="text-gray-300 mt-1">
+                            If you know alternate usernames or aliases the person uses, search for those as well to
+                            discover additional accounts.
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="flex items-start">
+                    <div class="flex-shrink-0 mt-1">
+                        <i class="fas fa-lightbulb text-yellow-500 mr-3"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-white font-medium">Be Patient</h4>
+                        <p class="text-gray-300 mt-1">
+                            Searching across hundreds of sites can take time. Be patient and allow the search to complete
+                            fully for the most comprehensive results.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
