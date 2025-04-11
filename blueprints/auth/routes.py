@@ -1,139 +1,136 @@
-# blueprints/ai_analysis/routes.py
-from flask import render_template, request, jsonify, current_app, session, flash, redirect, url_for
-from flask_login import current_user, login_required
-from blueprints.ai_analysis import ai_analysis_bp
-from blueprints.ai_analysis.utils import generate_osint_analysis, generate_security_recommendations
+# blueprints/auth/routes.py
+from flask import render_template, redirect, url_for, flash, request
+from flask_login import login_user, logout_user, login_required, current_user
+from urllib.parse import urlparse  # Use urllib.parse instead of werkzeug.urls
 from datetime import datetime
-import json
-from models import db, Scan
 
-@ai_analysis_bp.route('/')
-def index():
-    return render_template('ai_analysis/index.html', now=datetime.now())
+from blueprints.auth import auth_bp
+from models import db, User
 
-@ai_analysis_bp.route('/analyze', methods=['POST'])
-def analyze():
-    analysis_type = request.form.get('analysis_type')
-    target = request.form.get('target')
-    
-    if not analysis_type or not target:
-        flash('Analysis type and target are required', 'error')
-        return redirect(url_for('ai_analysis.index'))
-    
-    # Create results dictionary
-    results = {
-        'target': target,
-        'analysis_type': analysis_type,
-        'scan_date': datetime.now(),
-        'insights': [],
-        'recommendations': [],
-        'risk_score': 0
-    }
-    
-    # Generate analysis based on type
-    if analysis_type == 'username':
-        # Simulate results from previous username search
-        mock_accounts = [
-            {'site_name': 'Twitter', 'category': 'Social Media'},
-            {'site_name': 'LinkedIn', 'category': 'Professional'},
-            {'site_name': 'GitHub', 'category': 'Professional'},
-            {'site_name': 'Reddit', 'category': 'Forums'}
-        ]
-        
-        insights = generate_osint_analysis(target, 'username', mock_accounts)
-        recommendations = generate_security_recommendations('username', insights)
-        
-        results['insights'] = insights
-        results['recommendations'] = recommendations
-        results['risk_score'] = 45  # Example score
-        
-    elif analysis_type == 'email':
-        # Simulate results from previous data breach search
-        mock_breaches = [
-            {'name': 'LinkedIn', 'date': '2012-05-05', 'data_types': ['Email', 'Password']},
-            {'name': 'Adobe', 'date': '2013-10-04', 'data_types': ['Email', 'Password', 'Address']}
-        ]
-        
-        insights = generate_osint_analysis(target, 'email', mock_breaches)
-        recommendations = generate_security_recommendations('email', insights)
-        
-        results['insights'] = insights
-        results['recommendations'] = recommendations
-        results['risk_score'] = 65  # Example score
-        
-    elif analysis_type == 'domain':
-        # Simulate domain analysis results
-        mock_domain_data = {
-            'registrar': 'GoDaddy',
-            'creation_date': '2010-01-15',
-            'expiration_date': '2025-01-15',
-            'nameservers': ['ns1.example.com', 'ns2.example.com']
-        }
-        
-        insights = generate_osint_analysis(target, 'domain', mock_domain_data)
-        recommendations = generate_security_recommendations('domain', insights)
-        
-        results['insights'] = insights
-        results['recommendations'] = recommendations
-        results['risk_score'] = 30  # Example score
-        
-    elif analysis_type == 'combined':
-        # Combine multiple data sources for a comprehensive analysis
-        mock_combined_data = {
-            'username_findings': [{'site_name': 'Twitter'}, {'site_name': 'LinkedIn'}],
-            'email_findings': [{'name': 'Adobe', 'data_types': ['Email', 'Password']}],
-            'domain_findings': {'registrar': 'GoDaddy', 'creation_date': '2015-05-10'}
-        }
-        
-        insights = generate_osint_analysis(target, 'combined', mock_combined_data)
-        recommendations = generate_security_recommendations('combined', insights)
-        
-        results['insights'] = insights
-        results['recommendations'] = recommendations
-        results['risk_score'] = 75  # Example score
-    
-    # Save results to database if user is logged in
+@auth_bp.route('/login', methods=['GET', 'POST'])
+def login():
+    # If user is already logged in, redirect to home page
     if current_user.is_authenticated:
-        # Convert the results to JSON for storage
-        results_json = json.dumps(results, default=str)
+        return redirect(url_for('home.index'))
+    
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        remember_me = request.form.get('remember_me') == 'true'
         
-        # Create a new scan record
-        new_scan = Scan(
-            user_id=current_user.id,
-            scan_type='ai_analysis',
-            target=target,
-            scan_date=datetime.now(),
-            status='completed',
-            findings=len(results['insights']),
-            results_json=results_json,
-            risk_score=results['risk_score']
-        )
+        user = User.query.filter_by(username=username).first()
         
-        db.session.add(new_scan)
+        # Check if user exists and password is correct
+        if user is None or not user.verify_password(password):
+            flash('Invalid username or password', 'error')
+            return redirect(url_for('auth.login'))
+        
+        # Log in the user
+        login_user(user, remember=remember_me)
+        user.last_login = datetime.utcnow()
         db.session.commit()
+        
+        # Redirect to the page the user was trying to access or to home
+        next_page = request.args.get('next')
+        if not next_page or urlparse(next_page).netloc != '':
+            next_page = url_for('home.index')
+        
+        return redirect(next_page)
     
-    return render_template('ai_analysis/results.html', results=results, now=datetime.now())
+    return render_template('auth/login.html', now=datetime.now())
 
-@ai_analysis_bp.route('/show_saved_results/<int:scan_id>')
+@auth_bp.route('/register', methods=['GET', 'POST'])
+def register():
+    # If user is already logged in, redirect to home page
+    if current_user.is_authenticated:
+        return redirect(url_for('home.index'))
+    
+    if request.method == 'POST':
+        username = request.form.get('username')
+        email = request.form.get('email')
+        password = request.form.get('password')
+        confirm_password = request.form.get('confirm_password')
+        
+        # Simple validation
+        if not all([username, email, password, confirm_password]):
+            flash('All fields are required', 'error')
+            return redirect(url_for('auth.register'))
+        
+        if password != confirm_password:
+            flash('Passwords do not match', 'error')
+            return redirect(url_for('auth.register'))
+        
+        # Check if username or email already exists
+        if User.query.filter_by(username=username).first():
+            flash('Username already exists', 'error')
+            return redirect(url_for('auth.register'))
+        
+        if User.query.filter_by(email=email).first():
+            flash('Email already exists', 'error')
+            return redirect(url_for('auth.register'))
+        
+        # Create new user
+        new_user = User(username=username, email=email)
+        new_user.password = password
+        
+        db.session.add(new_user)
+        db.session.commit()
+        
+        flash('Registration successful! You can now login.', 'success')
+        return redirect(url_for('auth.login'))
+    
+    return render_template('auth/register.html', now=datetime.now())
+
+@auth_bp.route('/logout')
 @login_required
-def show_saved_results(scan_id):
-    # Get the saved scan from database
-    scan = Scan.query.filter_by(id=scan_id, user_id=current_user.id).first_or_404()
-    
-    if scan.scan_type != 'ai_analysis':
-        flash('Invalid scan type', 'error')
-        return redirect(url_for('home.my_scans'))
-    
-    try:
-        # Deserialize the JSON results
-        results = json.loads(scan.results_json)
+def logout():
+    logout_user()
+    return redirect(url_for('home.index'))
+
+@auth_bp.route('/profile')
+@login_required
+def profile():
+    """Display the user profile page"""
+    return render_template('auth/profile.html', user=current_user, now=datetime.now())
+
+@auth_bp.route('/profile/edit', methods=['GET', 'POST'])
+@login_required
+def edit_profile():
+    """Edit user profile"""
+    if request.method == 'POST':
+        email = request.form.get('email')
+        current_password = request.form.get('current_password')
+        new_password = request.form.get('new_password')
+        confirm_password = request.form.get('confirm_password')
         
-        # Convert date strings back to datetime objects if needed
-        if isinstance(results.get('scan_date'), str):
-            results['scan_date'] = datetime.fromisoformat(results['scan_date'].replace('Z', '+00:00'))
+        # Check if email is already taken by another user
+        if email != current_user.email:
+            existing_user = User.query.filter_by(email=email).first()
+            if existing_user:
+                flash('Email already in use by another account', 'error')
+                return redirect(url_for('auth.edit_profile'))
+            
+            # Update email
+            current_user.email = email
         
-        return render_template('ai_analysis/results.html', results=results, now=datetime.now(), scan_id=scan.id)
-    except Exception as e:
-        print(f"Error displaying saved results: {e}")
-        flash('Error loading saved scan results', 'error')
-        return redirect(url_for('home.my_scans'))
+        # Update password if provided
+        if current_password and new_password and confirm_password:
+            # Verify current password
+            if not current_user.verify_password(current_password):
+                flash('Current password is incorrect', 'error')
+                return redirect(url_for('auth.edit_profile'))
+            
+            # Check if new passwords match
+            if new_password != confirm_password:
+                flash('New passwords do not match', 'error')
+                return redirect(url_for('auth.edit_profile'))
+            
+            # Update password
+            current_user.password = new_password
+        
+        # Save changes
+        db.session.commit()
+        flash('Profile updated successfully', 'success')
+        return redirect(url_for('auth.profile'))
+    
+    return render_template('auth/edit_profile.html', user=current_user, now=datetime.now())

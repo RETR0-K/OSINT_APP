@@ -4,8 +4,6 @@ from flask_login import current_user, login_required
 from datetime import datetime
 from blueprints.home import home_bp
 from models import db, Scan
-from blueprints.home.utils import export_scan_to_json, export_scan_to_csv, export_scans_to_csv
-
 
 @home_bp.route('/')
 def index():
@@ -112,24 +110,3 @@ def delete_scan(scan_id):
     db.session.commit()
     
     return redirect(url_for('home.my_scans'))
-
-@home_bp.route('/scan/<int:scan_id>/export/json')
-@login_required
-def export_scan_json(scan_id):
-    """Export a scan in JSON format"""
-    scan = Scan.query.filter_by(id=scan_id, user_id=current_user.id).first_or_404()
-    return export_scan_to_json(scan)
-
-@home_bp.route('/scan/<int:scan_id>/export/csv')
-@login_required
-def export_scan_csv(scan_id):
-    """Export a scan in CSV format"""
-    scan = Scan.query.filter_by(id=scan_id, user_id=current_user.id).first_or_404()
-    return export_scan_to_csv(scan)
-
-@home_bp.route('/export/all/csv')
-@login_required
-def export_all_scans_csv():
-    """Export all user scans in CSV format"""
-    scans = Scan.query.filter_by(user_id=current_user.id).all()
-    return export_scans_to_csv(scans)

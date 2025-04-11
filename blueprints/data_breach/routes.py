@@ -1,5 +1,5 @@
 # blueprints/data_breach/routes.py
-from flask import render_template, request, current_app, jsonify, flash, redirect, url_for
+from flask import render_template, request, current_app, jsonify, flash, redirect, url_for, Blueprint
 from flask_login import current_user, login_required
 from blueprints.data_breach import data_breach_bp
 from blueprints.data_breach.utils import check_breach_directory, check_breach_search, check_osint_search

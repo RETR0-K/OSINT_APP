@@ -17,8 +17,7 @@ def analyze():
     target = request.form.get('target')
     
     if not analysis_type or not target:
-        flash('Analysis type and target are required', 'error')
-        return redirect(url_for('ai_analysis.index'))
+        return jsonify({'error': 'Analysis type and target are required'}), 400
     
     # Create results dictionary
     results = {

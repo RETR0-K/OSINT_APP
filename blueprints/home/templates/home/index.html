@@ -1,138 +1,366 @@
-# blueprints/ai_analysis/routes.py
-from flask import render_template, request, jsonify, current_app, session, flash, redirect, url_for
-from flask_login import current_user, login_required
-from blueprints.ai_analysis import ai_analysis_bp
-from blueprints.ai_analysis.utils import generate_osint_analysis, generate_security_recommendations
-from datetime import datetime
-import json
-from models import db, Scan
+{% extends "base.html" %}
 
-@ai_analysis_bp.route('/')
-def index():
-    return render_template('ai_analysis/index.html', now=datetime.now())
+{% block title %}OSINT Tracker - Dashboard{% endblock %}
 
-@ai_analysis_bp.route('/analyze', methods=['POST'])
-def analyze():
-    analysis_type = request.form.get('analysis_type')
-    target = request.form.get('target')
-    
-    if not analysis_type or not target:
-        return jsonify({'error': 'Analysis type and target are required'}), 400
-    
-    # Create results dictionary
-    results = {
-        'target': target,
-        'analysis_type': analysis_type,
-        'scan_date': datetime.now(),
-        'insights': [],
-        'recommendations': [],
-        'risk_score': 0
-    }
-    
-    # Generate analysis based on type
-    if analysis_type == 'username':
-        # Simulate results from previous username search
-        mock_accounts = [
-            {'site_name': 'Twitter', 'category': 'Social Media'},
-            {'site_name': 'LinkedIn', 'category': 'Professional'},
-            {'site_name': 'GitHub', 'category': 'Professional'},
-            {'site_name': 'Reddit', 'category': 'Forums'}
-        ]
-        
-        insights = generate_osint_analysis(target, 'username', mock_accounts)
-        recommendations = generate_security_recommendations('username', insights)
-        
-        results['insights'] = insights
-        results['recommendations'] = recommendations
-        results['risk_score'] = 45  # Example score
-        
-    elif analysis_type == 'email':
-        # Simulate results from previous data breach search
-        mock_breaches = [
-            {'name': 'LinkedIn', 'date': '2012-05-05', 'data_types': ['Email', 'Password']},
-            {'name': 'Adobe', 'date': '2013-10-04', 'data_types': ['Email', 'Password', 'Address']}
-        ]
-        
-        insights = generate_osint_analysis(target, 'email', mock_breaches)
-        recommendations = generate_security_recommendations('email', insights)
-        
-        results['insights'] = insights
-        results['recommendations'] = recommendations
-        results['risk_score'] = 65  # Example score
-        
-    elif analysis_type == 'domain':
-        # Simulate domain analysis results
-        mock_domain_data = {
-            'registrar': 'GoDaddy',
-            'creation_date': '2010-01-15',
-            'expiration_date': '2025-01-15',
-            'nameservers': ['ns1.example.com', 'ns2.example.com']
-        }
-        
-        insights = generate_osint_analysis(target, 'domain', mock_domain_data)
-        recommendations = generate_security_recommendations('domain', insights)
-        
-        results['insights'] = insights
-        results['recommendations'] = recommendations
-        results['risk_score'] = 30  # Example score
-        
-    elif analysis_type == 'combined':
-        # Combine multiple data sources for a comprehensive analysis
-        mock_combined_data = {
-            'username_findings': [{'site_name': 'Twitter'}, {'site_name': 'LinkedIn'}],
-            'email_findings': [{'name': 'Adobe', 'data_types': ['Email', 'Password']}],
-            'domain_findings': {'registrar': 'GoDaddy', 'creation_date': '2015-05-10'}
-        }
-        
-        insights = generate_osint_analysis(target, 'combined', mock_combined_data)
-        recommendations = generate_security_recommendations('combined', insights)
-        
-        results['insights'] = insights
-        results['recommendations'] = recommendations
-        results['risk_score'] = 75  # Example score
-    
-    # Save results to database if user is logged in
-    if current_user.is_authenticated:
-        # Convert the results to JSON for storage
-        results_json = json.dumps(results, default=str)
-        
-        # Create a new scan record
-        new_scan = Scan(
-            user_id=current_user.id,
-            scan_type='ai_analysis',
-            target=target,
-            scan_date=datetime.now(),
-            status='completed',
-            findings=len(results['insights']),
-            results_json=results_json,
-            risk_score=results['risk_score']
-        )
-        
-        db.session.add(new_scan)
-        db.session.commit()
-    
-    return render_template('ai_analysis/results.html', results=results, now=datetime.now())
+{% block content %}
+<div class="animate__animated animate__fadeIn">
+    {% if not current_user.is_authenticated %}
+    <!-- Hero Section for Anonymous Users -->
+    <div class="bg-gray-800 rounded-lg shadow-xl overflow-hidden mb-8 border border-gray-700">
+        <div class="px-6 py-12 max-w-7xl mx-auto">
+            <h1 class="text-4xl font-extrabold tracking-tight text-center mb-6">
+                <span class="block bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-600">
+                    OSINT Intelligence Tracker
+                </span>
+            </h1>
+            <p class="text-xl text-gray-300 text-center mb-8">
+                Discover digital footprints, track online presence, and analyze exposure with AI-powered insights.
+            </p>
+            <div class="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4 mb-6">
+                <a href="{{ url_for('data_breach.index') }}" class="flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 md:text-lg transition duration-300 ease-in-out">
+                    <i class="fas fa-shield-alt mr-2"></i> Data Breach Search
+                </a>
+                <a href="{{ url_for('username_search.index') }}" class="flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 md:text-lg transition duration-300 ease-in-out">
+                    <i class="fas fa-user-secret mr-2"></i> Username Search
+                </a>
+            </div>
+            
+            <div class="text-center">
+                <p class="text-gray-400 mb-4">Create an account to save your scan history and access personalized insights</p>
+                <a href="{{ url_for('auth.register') }}" class="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-green-600 hover:bg-green-700 md:text-lg transition duration-300 ease-in-out">
+                    <i class="fas fa-user-plus mr-2"></i> Register Now
+                </a>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <!-- Welcome Message for Authenticated Users -->
+    <div class="bg-gray-800 rounded-lg shadow-xl overflow-hidden mb-8 border border-gray-700">
+        <div class="px-6 py-8 max-w-7xl mx-auto">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+                <div class="mb-4 md:mb-0">
+                    <h1 class="text-3xl font-bold text-white">
+                        Welcome, {{ current_user.username }}!
+                    </h1>
+                    <p class="text-gray-300 mt-1">
+                        Your last login was {% if current_user.last_login %}{{ current_user.last_login.strftime('%b %d, %Y at %H:%M') }}{% else %}never recorded{% endif %}
+                    </p>
+                </div>
+                <div>
+                    <a href="{{ url_for('home.my_scans') }}" class="flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition duration-300 ease-in-out">
+                        <i class="fas fa-history mr-2"></i> View All Scans
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 
-@ai_analysis_bp.route('/show_saved_results/<int:scan_id>')
-@login_required
-def show_saved_results(scan_id):
-    # Get the saved scan from database
-    scan = Scan.query.filter_by(id=scan_id, user_id=current_user.id).first_or_404()
-    
-    if scan.scan_type != 'ai_analysis':
-        flash('Invalid scan type', 'error')
-        return redirect(url_for('home.my_scans'))
-    
-    try:
-        # Deserialize the JSON results
-        results = json.loads(scan.results_json)
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div class="bg-gradient-to-br from-blue-900 to-blue-800 rounded-lg shadow-lg p-6 border border-blue-700 animate__animated animate__fadeInUp animate__delay-1s">
+            <div class="flex items-center">
+                <div class="bg-blue-800 p-3 rounded-full mr-4">
+                    <i class="fas fa-search text-blue-400 text-xl"></i>
+                </div>
+                <div>
+                    <p class="text-blue-200 text-sm">Total Scans</p>
+                    <p class="text-white text-2xl font-bold text-right w-full">{{ stats.total_scans }}</p>
+                </div>
+            </div>
+        </div>
         
-        # Convert date strings back to datetime objects if needed
-        if isinstance(results.get('scan_date'), str):
-            results['scan_date'] = datetime.fromisoformat(results['scan_date'].replace('Z', '+00:00'))
+        <div class="bg-gradient-to-br from-red-900 to-red-800 rounded-lg shadow-lg p-6 border border-red-700 animate__animated animate__fadeInUp animate__delay-2s">
+            <div class="flex items-center">
+                <div class="bg-red-800 p-3 rounded-full mr-4">
+                    <i class="fas fa-exclamation-triangle text-red-400 text-xl"></i>
+                </div>
+                <div>
+                    <p class="text-red-200 text-sm">Breaches Found</p>
+                    <p class="text-white text-2xl font-bold text-right w-full">{{ stats.breaches_found }}</p>
+                </div>
+            </div>
+        </div>
         
-        return render_template('ai_analysis/results.html', results=results, now=datetime.now(), scan_id=scan.id)
-    except Exception as e:
-        print(f"Error displaying saved results: {e}")
-        flash('Error loading saved scan results', 'error')
-        return redirect(url_for('home.my_scans'))
+        <div class="bg-gradient-to-br from-purple-900 to-purple-800 rounded-lg shadow-lg p-6 border border-purple-700 animate__animated animate__fadeInUp animate__delay-3s">
+            <div class="flex items-center">
+                <div class="bg-purple-800 p-3 rounded-full mr-4">
+                    <i class="fas fa-user-circle text-purple-400 text-xl"></i>
+                </div>
+                <div>
+                    <p class="text-purple-200 text-sm">Accounts Discovered</p>
+                    <p class="text-white text-2xl font-bold text-right w-full">{{ stats.accounts_discovered }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-gradient-to-br from-green-900 to-green-800 rounded-lg shadow-lg p-6 border border-green-700 animate__animated animate__fadeInUp animate__delay-4s">
+            <div class="flex items-center">
+                <div class="bg-green-800 p-3 rounded-full mr-4">
+                    <i class="fas fa-chart-line text-green-400 text-xl"></i>
+                </div>
+                <div>
+                    <p class="text-green-200 text-sm">Risk Score</p>
+                    <p class="text-white text-2xl font-bold text-right w-full">{{ stats.risk_score }}/100</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Scans -->
+    <div class="bg-gray-800 rounded-lg shadow-xl overflow-hidden mb-8 border border-gray-700">
+        <div class="px-6 py-5 border-b border-gray-700">
+            <div class="flex justify-between items-center">
+                <h3 class="text-lg font-medium text-white">Recent Scans</h3>
+                {% if current_user.is_authenticated %}
+                <a href="{{ url_for('home.my_scans') }}" class="text-blue-400 hover:text-blue-300 text-sm">
+                    View All <i class="fas fa-arrow-right ml-1"></i>
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-700">
+                <thead class="bg-gray-700">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Target</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Type</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Date</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Status</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Findings</th>
+                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-300 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-gray-800 divide-y divide-gray-700">
+                    {% for scan in recent_scans %}
+                    <tr class="hover:bg-gray-750">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="flex items-center">
+                                {% if scan.scan_type == 'username' %}
+                                    <i class="fas fa-user-tag text-purple-500 mr-2"></i>
+                                {% elif scan.scan_type == 'email' %}
+                                    <i class="fas fa-shield-alt text-red-500 mr-2"></i>
+                                {% elif scan.scan_type == 'domain' %}
+                                    <i class="fas fa-globe text-blue-500 mr-2"></i>
+                                {% else %}
+                                    <i class="fas fa-brain text-green-500 mr-2"></i>
+                                {% endif %}
+                                <div class="text-sm font-medium text-white">{{ scan.target }}</div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm text-gray-300">
+                                {% if scan.scan_type == 'username' %}
+                                    Username Search
+                                {% elif scan.scan_type == 'email' %}
+                                    Data Breach
+                                {% elif scan.scan_type == 'domain' %}
+                                    Domain Analysis
+                                {% elif scan.scan_type == 'ai_analysis' %}
+                                    AI Analysis
+                                {% else %}
+                                    {{ scan.scan_type|capitalize }}
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm text-gray-300">
+                                {% if scan is mapping %}
+                                    {{ scan.scan_date.strftime('%b %d, %Y %H:%M') }}
+                                {% else %}
+                                    {{ scan.scan_date.strftime('%b %d, %Y %H:%M') }}
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            {% if (scan is mapping and scan.status == 'completed') or (scan is not mapping and scan.status == 'completed') %}
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-900 text-green-300">
+                                    Completed
+                                </span>
+                            {% elif (scan is mapping and scan.status == 'in_progress') or (scan is not mapping and scan.status == 'in_progress') %}
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-900 text-yellow-300">
+                                    In Progress
+                                </span>
+                            {% else %}
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-900 text-red-300">
+                                    Failed
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm text-gray-300">
+                                {% if scan is mapping %}
+                                    {{ scan.findings }} items
+                                {% else %}
+                                    {{ scan.findings }} items
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            {% if current_user.is_authenticated and not scan is mapping %}
+                                <a href="{{ url_for('home.view_scan', scan_id=scan.id) }}" class="text-indigo-400 hover:text-indigo-300 mr-3">View</a>
+                                <a href="{{ url_for('home.delete_scan', scan_id=scan.id) }}" class="text-red-400 hover:text-red-300"
+                                   onclick="return confirm('Are you sure you want to delete this scan?');">Delete</a>
+                            {% else %}
+                                <a href="#" class="text-indigo-400 hover:text-indigo-300 mr-3">View</a>
+                                <a href="#" class="text-red-400 hover:text-red-300">Delete</a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Quick Tools -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="bg-gray-800 rounded-lg shadow-lg overflow-hidden border border-gray-700">
+            <div class="px-4 py-5 sm:p-6">
+                <div class="flex items-center mb-4">
+                    <div class="bg-blue-600 p-2 rounded-full mr-3">
+                        <i class="fas fa-envelope text-white"></i>
+                    </div>
+                    <h3 class="text-lg leading-6 font-medium text-white">Email Breach Check</h3>
+                </div>
+                <p class="text-sm text-gray-400 mb-4">
+                    Check if an email address has been compromised in a data breach.
+                </p>
+                <form id="email-breach-form" action="{{ url_for('data_breach.check_email') }}" method="post" class="mt-5">
+                    <div class="flex items-center">
+                        <input type="email" name="email" id="email-input" placeholder="Enter email address" required 
+                            class="flex-1 appearance-none border border-gray-600 bg-gray-700 rounded-l-md py-2 px-4 text-white leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-r-md transition duration-300 ease-in-out">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div class="bg-gray-800 rounded-lg shadow-lg overflow-hidden border border-gray-700">
+            <div class="px-4 py-5 sm:p-6">
+                <div class="flex items-center mb-4">
+                    <div class="bg-purple-600 p-2 rounded-full mr-3">
+                        <i class="fas fa-user-tag text-white"></i>
+                    </div>
+                    <h3 class="text-lg leading-6 font-medium text-white">Username Lookup</h3>
+                </div>
+                <p class="text-sm text-gray-400 mb-4">
+                    Find accounts associated with a username across various platforms.
+                </p>
+                <form id="username-lookup-form" action="{{ url_for('username_search.search') }}" method="post" class="mt-5">
+                    <div class="flex items-center">
+                        <input type="text" name="username" id="username-input" placeholder="Enter username" required 
+                            class="flex-1 appearance-none border border-gray-600 bg-gray-700 rounded-l-md py-2 px-4 text-white leading-tight focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent" />
+                        <button type="submit" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-r-md transition duration-300 ease-in-out">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div class="bg-gray-800 rounded-lg shadow-lg overflow-hidden border border-gray-700">
+            <div class="px-4 py-5 sm:p-6">
+                <div class="flex items-center mb-4">
+                    <div class="bg-green-600 p-2 rounded-full mr-3">
+                        <i class="fas fa-brain text-white"></i>
+                    </div>
+                    <h3 class="text-lg leading-6 font-medium text-white">AI Analysis</h3>
+                </div>
+                <p class="text-sm text-gray-400 mb-4">
+                    Generate insights and risk assessments using AI based on gathered data.
+                </p>
+                <a href="{{ url_for('ai_analysis.index') }}" 
+                   class="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 transition duration-300 ease-in-out">
+                    <i class="fas fa-chart-network mr-2"></i>
+                    Run AI Analysis
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    {% if current_user.is_authenticated %}
+    <!-- Account Activity -->
+    <div class="bg-gray-800 rounded-lg shadow-lg overflow-hidden mb-8 border border-gray-700">
+        <div class="px-6 py-5 border-b border-gray-700">
+            <h3 class="text-lg font-medium text-white">Account Activity</h3>
+        </div>
+        <div class="px-6 py-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <h4 class="text-white font-medium mb-3">Scan Type Distribution</h4>
+                    <div class="space-y-3">
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span class="text-sm text-gray-300">Username Searches</span>
+                                <span class="text-sm text-gray-400">
+                                    {{ recent_scans|selectattr('scan_type', 'equalto', 'username')|list|length }}
+                                </span>
+                            </div>
+                            <div class="w-full bg-gray-700 rounded-full h-2">
+                                <div class="h-2 rounded-full bg-purple-500" 
+                                     style="width: {{ (recent_scans|selectattr('scan_type', 'equalto', 'username')|list|length / recent_scans|length * 100) if recent_scans|length > 0 else 0 }}%"></div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span class="text-sm text-gray-300">Data Breaches</span>
+                                <span class="text-sm text-gray-400">
+                                    {{ recent_scans|selectattr('scan_type', 'equalto', 'email')|list|length }}
+                                </span>
+                            </div>
+                            <div class="w-full bg-gray-700 rounded-full h-2">
+                                <div class="h-2 rounded-full bg-red-500" 
+                                     style="width: {{ (recent_scans|selectattr('scan_type', 'equalto', 'email')|list|length / recent_scans|length * 100) if recent_scans|length > 0 else 0 }}%"></div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span class="text-sm text-gray-300">AI Analysis</span>
+                                <span class="text-sm text-gray-400">
+                                    {{ recent_scans|selectattr('scan_type', 'equalto', 'ai_analysis')|list|length }}
+                                </span>
+                            </div>
+                            <div class="w-full bg-gray-700 rounded-full h-2">
+                                <div class="h-2 rounded-full bg-green-500" 
+                                     style="width: {{ (recent_scans|selectattr('scan_type', 'equalto', 'ai_analysis')|list|length / recent_scans|length * 100) if recent_scans|length > 0 else 0 }}%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div>
+                    <h4 class="text-white font-medium mb-3">Account Summary</h4>
+                    <ul class="space-y-2 text-gray-300">
+                        <li class="flex justify-between">
+                            <span>Member Since:</span>
+                            <span class="text-gray-400">{{ current_user.created_at.strftime('%B %d, %Y') }}</span>
+                        </li>
+                        <li class="flex justify-between">
+                            <span>Total Scans:</span>
+                            <span class="text-gray-400">{{ stats.total_scans }}</span>
+                        </li>
+                        <li class="flex justify-between">
+                            <span>Average Risk Score:</span>
+                            <span class="text-gray-400">{{ stats.risk_score }}/100</span>
+                        </li>
+                        <li class="flex justify-between">
+                            <span>Account Status:</span>
+                            <span class="text-green-400">Active</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/home.js') }}"></script>
+{% endblock %}
