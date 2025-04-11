@@ -6,6 +6,7 @@ from blueprints.username_search.utils import search_username, get_search_progres
 from datetime import datetime
 import json
 import os
+import tempfile
 import traceback
 from models import db, Scan
 
