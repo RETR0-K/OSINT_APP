@@ -37,7 +37,7 @@
     </div>
     
     <!-- Features Section -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
         <div class="bg-gray-800 rounded-lg shadow-lg border border-gray-700 p-6">
             <div class="bg-blue-600 p-3 rounded-full inline-block mb-4">
                 <i class="fas fa-database text-white text-xl"></i>
@@ -45,7 +45,7 @@
             <h3 class="text-xl font-bold text-white mb-2">Multiple Data Sources</h3>
             <p class="text-gray-300">
                 We check your email against multiple breach databases including BreachDirectory, 
-                BreachSearch, and OSINT Search.
+                BreachSearch, OSINT Search, and XposedOrNot.
             </p>
         </div>
         
@@ -70,6 +70,67 @@
                 your email has been found in.
             </p>
         </div>
+        
+        <div class="bg-gray-800 rounded-lg shadow-lg border border-gray-700 p-6">
+            <div class="bg-red-600 p-3 rounded-full inline-block mb-4">
+                <i class="fas fa-eye text-white text-xl"></i>
+            </div>
+            <h3 class="text-xl font-bold text-white mb-2">XposedOrNot Integration</h3>
+            <p class="text-gray-300">
+                Integration with XposedOrNot's comprehensive breach database gives you additional 
+                insights into potential data exposures.
+            </p>
+        </div>
+    </div>
+    
+    <!-- How It Works Section -->
+    <div class="bg-gray-800 rounded-lg shadow-lg overflow-hidden mb-8 border border-gray-700">
+        <div class="px-6 py-5 border-b border-gray-700">
+            <h3 class="text-xl font-medium text-white">How It Works</h3>
+        </div>
+        <div class="px-6 py-6">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div class="text-center">
+                    <div class="bg-gray-700 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <span class="text-2xl font-bold text-blue-400">1</span>
+                    </div>
+                    <h4 class="text-lg font-medium text-white mb-2">Enter Email</h4>
+                    <p class="text-gray-300">
+                        Provide an email address you want to check for breaches.
+                    </p>
+                </div>
+                
+                <div class="text-center">
+                    <div class="bg-gray-700 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <span class="text-2xl font-bold text-blue-400">2</span>
+                    </div>
+                    <h4 class="text-lg font-medium text-white mb-2">Multiple Sources</h4>
+                    <p class="text-gray-300">
+                        We search multiple breach databases including XposedOrNot to find your data.
+                    </p>
+                </div>
+                
+                <div class="text-center">
+                    <div class="bg-gray-700 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <span class="text-2xl font-bold text-blue-400">3</span>
+                    </div>
+                    <h4 class="text-lg font-medium text-white mb-2">Privacy First</h4>
+                    <p class="text-gray-300">
+                        For XposedOrNot, we use k-anonymity to protect your full email address.
+                    </p>
+                </div>
+                
+                <div class="text-center">
+                    <div class="bg-gray-700 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <span class="text-2xl font-bold text-blue-400">4</span>
+                    </div>
+                    <h4 class="text-lg font-medium text-white mb-2">Get Results</h4>
+                    <p class="text-gray-300">
+                        View a comprehensive report of all breaches containing your email.
+                    </p>
+                </div>
+            </div>
+        </div>
     </div>
     
     <!-- FAQ Section -->
@@ -92,8 +153,17 @@
                     <h4 class="text-lg font-medium text-white mb-2">How do you find data breaches?</h4>
                     <p class="text-gray-300">
                         We use multiple APIs to search known data breach repositories. Our service queries 
-                        BreachDirectory, BreachSearch, OSINT Search, and other databases to provide a comprehensive 
+                        BreachDirectory, BreachSearch, OSINT Search, XposedOrNot, and other databases to provide a comprehensive 
                         view of where your information may have been exposed.
+                    </p>
+                </div>
+                
+                <div>
+                    <h4 class="text-lg font-medium text-white mb-2">What is XposedOrNot?</h4>
+                    <p class="text-gray-300">
+                        XposedOrNot is a data breach search service that securely checks if your email has been compromised 
+                        in known data breaches. It uses a k-anonymity model to protect your privacy during searches and provides 
+                        detailed information about breaches your email has been found in.
                     </p>
                 </div>
                 

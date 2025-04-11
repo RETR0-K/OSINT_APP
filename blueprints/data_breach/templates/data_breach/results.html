@@ -118,6 +118,12 @@
                         <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Password</th>
                         <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">SHA1</th>
                         <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Hash</th>
+                        {% elif source.name == 'XposedOrNot' %}
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Source</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Date</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Email Domain</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Password Hash</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Breach Size</th>
                         {% else %}
                         <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Source</th>
                         <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Details</th>
@@ -142,6 +148,12 @@
                         <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-300">{{ breach.password }}</td>
                         <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-300 font-mono">{{ breach.sha1 }}</td>
                         <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-300 font-mono">{{ breach.hash }}</td>
+                        {% elif source.name == 'XposedOrNot' %}
+                        <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-white">{{ breach.source }}</td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-300">{{ breach.breach_date }}</td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-300">{{ breach.email_domain }}</td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-300 font-mono">{{ breach.password_hash }}</td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-300">{{ breach.breach_size }}</td>
                         {% else %}
                         <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-white">{{ breach.source }}</td>
                         <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-300">{{ breach }}</td>
