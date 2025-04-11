@@ -1,8 +1,8 @@
 # blueprints/ai_analysis/utils.py
-import openai
 import json
 import time
 from flask import current_app
+from openai import OpenAI
 
 def generate_osint_analysis(target, analysis_type, data):
     """
@@ -15,7 +15,8 @@ def generate_osint_analysis(target, analysis_type, data):
         return _get_mock_insights(target, analysis_type)
     
     try:
-        openai.api_key = api_key
+        # Initialize the OpenAI client with the API key
+        client = OpenAI(api_key=api_key)
         
         # Prepare the system message based on analysis type
         system_message = _get_system_prompt(analysis_type)
@@ -34,9 +35,9 @@ def generate_osint_analysis(target, analysis_type, data):
         Please analyze this data and provide insights.
         """
         
-        # Make the API call to OpenAI
-        response = openai.ChatCompletion.create(
-            model="gpt-4",  # Use model available with your API key
+        # Make the API call to OpenAI using the new client format and gpt-3.5-turbo model
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",  # Using gpt-3.5-turbo which is available to all users
             messages=[
                 {"role": "system", "content": system_message},
                 {"role": "user", "content": user_message}
@@ -68,7 +69,8 @@ def generate_security_recommendations(analysis_type, insights):
         return _get_mock_recommendations(analysis_type)
     
     try:
-        openai.api_key = api_key
+        # Initialize the OpenAI client with the API key
+        client = OpenAI(api_key=api_key)
         
         # Format the insights for the AI
         formatted_insights = json.dumps(insights, indent=2)
@@ -94,9 +96,9 @@ def generate_security_recommendations(analysis_type, insights):
         Please provide security recommendations based on these insights.
         """
         
-        # Make the API call to OpenAI
-        response = openai.ChatCompletion.create(
-            model="gpt-4",  # Use model available with your API key
+        # Make the API call to OpenAI using the new client format and gpt-3.5-turbo model
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",  # Using gpt-3.5-turbo which is available to all users
             messages=[
                 {"role": "system", "content": system_message},
                 {"role": "user", "content": user_message}
@@ -135,6 +137,7 @@ def generate_security_recommendations(analysis_type, insights):
         print(f"Error generating security recommendations: {e}")
         return _get_mock_recommendations(analysis_type)
 
+# The rest of the code remains the same
 def _get_system_prompt(analysis_type):
     """Get the appropriate system prompt based on analysis type"""
     prompts = {

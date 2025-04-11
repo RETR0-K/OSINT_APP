@@ -10,171 +10,37 @@ from pathlib import Path
 import concurrent.futures
 from flask import current_app
 import threading
+import re
 
-def start_search(username, search_id, active_searches):
+def search_username(username):
     """
-    Start a username search in a background thread and update progress
+    Search for username across platforms using both Sherlock and WhatsMyName concurrently
     """
-    # Define the thread function
-    def search_thread():
-        try:
-            # Get the search data
-            search_data = active_searches[search_id]
-            
-            # Update status
-            search_data['status'] = 'Initializing search tools...'
-            
-            # Use ThreadPoolExecutor to run both searches in parallel
-            with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
-                # Submit both search tasks
-                sherlock_future = executor.submit(
-                    search_sherlock_with_progress, 
-                    username, 
-                    search_id, 
-                    active_searches
-                )
-                
-                whatsmyname_future = executor.submit(
-                    search_whatsmyname_with_progress, 
-                    username, 
-                    search_id, 
-                    active_searches
-                )
-                
-                # Wait for both to complete and get results
-                sherlock_results = sherlock_future.result()
-                whatsmyname_results = whatsmyname_future.result()
-            
-            # Process and combine results
-            combined_results = []
-            categories = {}
-            
-            # Process Sherlock results
-            if sherlock_results:
-                for site in sherlock_results:
-                    combined_results.append({
-                        'site_name': site['site_name'],
-                        'url': site['url'],
-                        'category': site.get('category', 'Uncategorized'),
-                        'source': 'Sherlock'
-                    })
-            
-            # Process WhatsMyName results
-            if whatsmyname_results:
-                for site in whatsmyname_results:
-                    combined_results.append({
-                        'site_name': site['site_name'],
-                        'url': site['url'],
-                        'category': site.get('category', 'Uncategorized'),
-                        'source': 'WhatsMyName'
-                    })
-            
-            # Count categories
-            for result in combined_results:
-                category = result['category']
-                if category not in categories:
-                    categories[category] = 0
-                categories[category] += 1
-            
-            total_found = len(combined_results)
-            
-            # Calculate risk score based on number of accounts found
-            if total_found == 0:
-                risk_score = 0
-            elif total_found <= 5:
-                risk_score = 10
-            elif total_found <= 15:
-                risk_score = 25
-            elif total_found <= 30:
-                risk_score = 50
-            elif total_found <= 50:
-                risk_score = 75
-            else:
-                risk_score = 100
-            
-            # Store the final results
-            search_data['results'] = {
-                'username': username,
-                'scan_date': search_data['start_time'],
-                'sherlock': sherlock_results,
-                'whatsmyname': whatsmyname_results,
-                'combined_results': combined_results,
-                'categories': categories,
-                'total_found': total_found,
-                'risk_score': risk_score
-            }
-            
-            # Mark the search as complete
-            search_data['is_complete'] = True
-            search_data['status'] = 'Search complete'
-            
-        except Exception as e:
-            print(f"Error in search thread: {e}")
-            # Update status with error
-            if search_id in active_searches:
-                active_searches[search_id]['status'] = f"Error: {str(e)}"
-                active_searches[search_id]['is_complete'] = True
+    # Use ThreadPoolExecutor to run both searches in parallel
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+        # Submit both search tasks
+        sherlock_future = executor.submit(search_sherlock, username)
+        whatsmyname_future = executor.submit(search_whatsmyname, username)
+        
+        # Wait for both to complete and get results
+        sherlock_results = sherlock_future.result()
+        whatsmyname_results = whatsmyname_future.result()
     
-    # Start the thread
-    thread = threading.Thread(target=search_thread)
-    thread.daemon = True  # Thread will exit when the main program exits
-    thread.start()
-    
-    return search_id
-
-def get_search_progress(search_id, active_searches):
-    """Get the current progress of a search"""
-    if search_id not in active_searches:
-        return {
-            'is_complete': False,
-            'sherlock': {'percent': 0, 'found': 0},
-            'whatsmyname': {'percent': 0, 'found': 0},
-            'status': 'Search not found'
-        }
-    
-    search_data = active_searches[search_id]
+    # Return both results
     return {
-        'is_complete': search_data['is_complete'],
-        'sherlock': search_data['sherlock'],
-        'whatsmyname': search_data['whatsmyname'],
-        'status': search_data.get('status', 'Searching...')
+        'sherlock': sherlock_results,
+        'whatsmyname': whatsmyname_results
     }
 
-def get_search_results(search_id, active_searches):
-    """Get the results of a completed search"""
-    if search_id not in active_searches:
-        return None
-    
-    search_data = active_searches[search_id]
-    return search_data['results']
-
-def search_sherlock_with_progress(username, search_id, active_searches):
+def search_sherlock(username):
     """
-    Search for username using Sherlock with progress tracking
+    Search for username across various platforms using Sherlock
+    
+    Note: Requires Sherlock to be installed on the system
+    Installation: pip install sherlock-project
     """
-    search_data = active_searches[search_id]
-    sherlock_data = search_data['sherlock']
-    
-    # Update status
-    sherlock_data['status'] = 'starting'
-    search_data['status'] = 'Starting Sherlock search...'
-    
     # Check if we have mock data for testing
     if os.environ.get('FLASK_ENV') == 'development' and os.environ.get('USE_MOCK_DATA') == 'True':
-        # Simulate progress
-        sherlock_data['total_sites'] = 200
-        for i in range(1, 101):
-            if search_id not in active_searches:
-                break
-                
-            sherlock_data['percent'] = i
-            sherlock_data['sites_checked'] = i * 2
-            
-            if i % 10 == 0:
-                sherlock_data['found'] += 1
-                
-            time.sleep(0.1)  # Simulate work
-            
         return _get_mock_sherlock_data(username)
     
     # Real Sherlock implementation
@@ -193,79 +59,40 @@ def search_sherlock_with_progress(username, search_id, active_searches):
             '--json'
         ]
         
-        # Update status
-        sherlock_data['status'] = 'running'
-        search_data['status'] = 'Running Sherlock search...'
-        
-        # Estimate total sites (this is approximate and may not be accurate)
-        sherlock_data['total_sites'] = 300  # Approximate number of sites Sherlock checks
-        
-        # Start the process
-        process = subprocess.Popen(
+        # Run Sherlock command
+        process = subprocess.run(
             cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            capture_output=True,
             text=True,
-            bufsize=1  # Line buffered
+            timeout=120  # 2 minute timeout
         )
         
-        # Track progress
-        sites_checked = 0
-        sites_found = 0
-        
-        # Monitor the stdout for progress
-        for line in iter(process.stdout.readline, ''):
-            if search_id not in active_searches:
-                process.kill()
-                break
-                
-            # Look for progress indicators in the output
-            if "[*] Checking username" in line:
-                sites_checked += 1
-                sherlock_data['sites_checked'] = sites_checked
-                
-                # Calculate approximate percentage
-                percent = min(int((sites_checked / sherlock_data['total_sites']) * 100), 99)
-                sherlock_data['percent'] = percent
-                
-            elif "[+]" in line:  # Found account
-                sites_found += 1
-                sherlock_data['found'] = sites_found
-                
-            # Update status in the shared data
-            search_data['status'] = f"Sherlock: Checked {sites_checked} sites, found {sites_found} accounts"
-        
-        # Wait for the process to complete
-        process.wait()
-        
-        # Update final status
-        sherlock_data['status'] = 'completed'
-        sherlock_data['percent'] = 100
+        if process.returncode != 0:
+            print(f"Sherlock error: {process.stderr}")
+            return _get_mock_sherlock_data(username)
         
         # Read the results from the JSON file
         try:
             with open(temp_file_path, 'r') as f:
                 results = json.load(f)
             
-            # Convert the results to our standard format
+            # Convert the results to our standard format and validate each found account
             formatted_results = []
             for site_name, data in results.get(username, {}).items():
                 if data.get('status', {}).get('message') == "Claimed":
-                    formatted_results.append({
-                        'site_name': site_name,
-                        'url': data.get('url', ''),
-                        'category': _get_site_category(site_name),
-                        'source': 'Sherlock'
-                    })
-            
-            # Update the final count
-            sherlock_data['found'] = len(formatted_results)
+                    url = data.get('url', '')
+                    # Only add if verification passes
+                    if verify_account_exists(url, site_name):
+                        formatted_results.append({
+                            'site_name': site_name,
+                            'url': url,
+                            'category': _get_site_category(site_name),
+                            'source': 'Sherlock'
+                        })
             
             return formatted_results
-            
         except (json.JSONDecodeError, FileNotFoundError) as e:
             print(f"Error reading Sherlock results: {e}")
-            sherlock_data['status'] = 'error'
             return _get_mock_sherlock_data(username)
         finally:
             # Clean up the temporary file
@@ -274,66 +101,37 @@ def search_sherlock_with_progress(username, search_id, active_searches):
             except:
                 pass
     
+    except subprocess.TimeoutExpired:
+        print("Sherlock search timed out")
+        return _get_mock_sherlock_data(username)
     except Exception as e:
         print(f"Error running Sherlock: {e}")
-        sherlock_data['status'] = 'error'
         return _get_mock_sherlock_data(username)
 
-def search_whatsmyname_with_progress(username, search_id, active_searches):
+def search_whatsmyname(username):
     """
-    Search for username using WhatsMyName with progress tracking
+    Search for username across various platforms using WhatsMyName
+    
+    This implementation uses the web check method directly
     """
-    search_data = active_searches[search_id]
-    whatsmyname_data = search_data['whatsmyname']
-    
-    # Update status
-    whatsmyname_data['status'] = 'starting'
-    search_data['status'] = 'Starting WhatsMyName search...'
-    
     # Check if we have mock data for testing
     if os.environ.get('FLASK_ENV') == 'development' and os.environ.get('USE_MOCK_DATA') == 'True':
-        # Simulate progress
-        whatsmyname_data['total_sites'] = 150
-        for i in range(1, 101):
-            if search_id not in active_searches:
-                break
-                
-            whatsmyname_data['percent'] = i
-            whatsmyname_data['sites_checked'] = i * 1.5
-            
-            if i % 15 == 0:
-                whatsmyname_data['found'] += 1
-                
-            time.sleep(0.1)  # Simulate work
-            
         return _get_mock_whatsmyname_data(username)
     
     # Real WhatsMyName implementation
     try:
-        # Update status
-        whatsmyname_data['status'] = 'fetching'
-        search_data['status'] = 'Fetching WhatsMyName database...'
-        
         # Get the WhatsMyName data file
         wmn_data_url = "https://raw.githubusercontent.com/WebBreacher/WhatsMyName/main/wmn-data.json"
-        response = requests.get(wmn_data_url)
+        response = requests.get(wmn_data_url, timeout=10)
         if response.status_code != 200:
             print(f"Error fetching WhatsMyName data: {response.status_code}")
-            whatsmyname_data['status'] = 'error'
-            return _get_mock_whatsmyname_data(username)
+            return []  # Return empty list instead of mock data for production
         
         wmn_data = response.json()
         sites = wmn_data.get('sites', [])
         
-        # Update total sites count
-        whatsmyname_data['total_sites'] = len(sites)
-        whatsmyname_data['status'] = 'running'
-        search_data['status'] = f'Running WhatsMyName search on {len(sites)} sites...'
-        
         # For better parallelism, process sites in multiple batches with ThreadPoolExecutor
         results = []
-        sites_checked = 0
-        sites_found = 0
         
         # Split sites into manageable batches (e.g., 10 sites per batch)
         batch_size = 10
@@ -342,56 +140,23 @@ def search_whatsmyname_with_progress(username, search_id, active_searches):
         # Process each batch in parallel
         with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
             # Submit a batch processing task for each batch of sites
-            future_to_batch = {executor.submit(_process_wmn_batch_with_progress, 
-                                              username, batch, search_id, 
-                                              active_searches, 
-                                              sites_checked, sites_found): batch 
-                               for batch in site_batches}
+            future_to_batch = {executor.submit(_process_wmn_batch, username, batch): batch for batch in site_batches}
             
             # Collect results as they complete
             for future in concurrent.futures.as_completed(future_to_batch):
-                if search_id not in active_searches:
-                    break
-                    
-                batch_results, batch_checked, batch_found = future.result()
+                batch_results = future.result()
                 results.extend(batch_results)
-                
-                # Update progress
-                sites_checked += batch_checked
-                sites_found += batch_found
-                
-                whatsmyname_data['sites_checked'] = sites_checked
-                whatsmyname_data['found'] = sites_found
-                
-                # Calculate percentage
-                percent = min(int((sites_checked / whatsmyname_data['total_sites']) * 100), 99)
-                whatsmyname_data['percent'] = percent
-                
-                # Update status
-                search_data['status'] = f"WhatsMyName: Checked {sites_checked} sites, found {sites_found} accounts"
-        
-        # Update final status
-        whatsmyname_data['status'] = 'completed'
-        whatsmyname_data['percent'] = 100
-        whatsmyname_data['found'] = len(results)
         
         return results
     
     except Exception as e:
         print(f"Error with WhatsMyName search: {e}")
-        whatsmyname_data['status'] = 'error'
-        return _get_mock_whatsmyname_data(username)
+        return []  # Return empty list instead of mock data for production
 
-def _process_wmn_batch_with_progress(username, sites_batch, search_id, active_searches, sites_checked_start, sites_found_start):
-    """Process a batch of WhatsMyName sites with progress tracking"""
+def _process_wmn_batch(username, sites_batch):
+    """Process a batch of WhatsMyName sites"""
     results = []
-    sites_checked = 0
-    sites_found = 0
-    
     for site in sites_batch:
-        if search_id not in active_searches:
-            break
-            
         try:
             # Skip sites missing required data
             if not all(k in site for k in ['name', 'uri_check', 'category']):
@@ -409,33 +174,115 @@ def _process_wmn_batch_with_progress(username, sites_batch, search_id, active_se
             # Check if the account exists
             found = False
             if 'account_existence_code' in site and response.status_code == site['account_existence_code']:
-                results.append({
-                    'site_name': site['name'],
-                    'url': check_url,
-                    'category': site['category'],
-                    'source': 'WhatsMyName'
-                })
-                found = True
+                # Verify content to reduce false positives
+                if verify_account_content(response.text, site, username):
+                    results.append({
+                        'site_name': site['name'],
+                        'url': check_url,
+                        'category': site.get('category', 'Uncategorized'),
+                        'source': 'WhatsMyName'
+                    })
+                    found = True
             elif 'account_existence_string' in site and site['account_existence_string'] in response.text:
-                results.append({
-                    'site_name': site['name'],
-                    'url': check_url,
-                    'category': site['category'],
-                    'source': 'WhatsMyName'
-                })
-                found = True
-            
-            # Update counters
-            sites_checked += 1
-            if found:
-                sites_found += 1
+                # Verify content to reduce false positives
+                if verify_account_content(response.text, site, username):
+                    results.append({
+                        'site_name': site['name'],
+                        'url': check_url,
+                        'category': site.get('category', 'Uncategorized'),
+                        'source': 'WhatsMyName'
+                    })
+                    found = True
         
-        except Exception as e:
+        except requests.RequestException:
             # Skip this site on error
-            sites_checked += 1
+            continue
+        except Exception as e:
+            # Skip this site on any other error
+            print(f"Error checking {site.get('name', 'unknown site')}: {e}")
             continue
     
-    return results, sites_checked, sites_found
+    return results
+
+def verify_account_exists(url, site_name):
+    """Verify that an account actually exists by checking the content of the page"""
+    try:
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        }
+        response = requests.get(url, headers=headers, timeout=5, allow_redirects=True)
+        
+        # Common error indicators across different sites
+        error_patterns = [
+            r"(user not found|account not found|page not found|profile not found|404)",
+            r"(doesn't exist|does not exist|not available|no user|isn't here)",
+            r"(no profile|user doesn't exist|profile doesn't exist|account doesn't exist)",
+            r"(couldn't find|couldn't be found|cannot be found|not be found)",
+            r"(deleted|disabled|suspended|removed|inactive|deactivated)"
+        ]
+        
+        # Check for error patterns in the page content, ignoring case
+        content_lower = response.text.lower()
+        for pattern in error_patterns:
+            if re.search(pattern, content_lower):
+                return False
+        
+        # Site-specific checks
+        if "twitter.com" in url:
+            if "this account doesn't exist" in content_lower or "does not exist" in content_lower:
+                return False
+        elif "instagram.com" in url:
+            if "sorry, this page isn't available" in content_lower:
+                return False
+        elif "facebook.com" in url:
+            if "page not found" in content_lower or "isn't available" in content_lower:
+                return False
+        elif "github.com" in url:
+            if "not found" in content_lower or "404" in content_lower:
+                return False
+        
+        # If no error patterns found, assume account exists
+        return True
+    
+    except Exception as e:
+        print(f"Error verifying account {url}: {e}")
+        return False  # If verification fails, don't include the account
+
+def verify_account_content(content, site, username):
+    """
+    Verify that the account content actually indicates a real account
+    and not just a 'not found' page that returns 200 status
+    """
+    # Common not-found indicators in page content
+    not_found_indicators = [
+        "not found", "doesn't exist", "does not exist", "no such user", 
+        "no such account", "page not found", "profile not found", "account not found",
+        "couldn't find", "couldn't be found", "cannot be found", "not be found",
+        "deleted", "disabled", "suspended", "removed", "inactive", "deactivated"
+    ]
+    
+    # Check for username presence in content for additional validation
+    username_presence = username.lower() in content.lower()
+    
+    # Check for not-found indicators
+    for indicator in not_found_indicators:
+        if indicator.lower() in content.lower():
+            return False
+    
+    # For more reliable validation, check for expected username appearance
+    if 'username_claimed_pattern' in site:
+        pattern = site['username_claimed_pattern']
+        if pattern and not re.search(pattern, content):
+            return False
+    
+    # If we have a positive match pattern defined for the site, use it
+    if 'account_existence_string' in site:
+        positive_pattern = site['account_existence_string']
+        if positive_pattern and positive_pattern not in content:
+            return False
+    
+    # If the site-specific check passes and no error indicators found, assume account exists
+    return True
 
 def _get_site_category(site_name):
     """Map site names to categories (simplified)"""

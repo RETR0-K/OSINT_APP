@@ -35,7 +35,7 @@
                 </div>
                 <div>
                     <p class="text-blue-200 text-sm">Total Scans</p>
-                    <p class="text-white text-2xl font-bold">{{ stats.total_scans }}</p>
+                    <p class="text-white text-2xl font-bold text-right w-full">{{ stats.total_scans }}</p>
                 </div>
             </div>
         </div>
@@ -47,7 +47,7 @@
                 </div>
                 <div>
                     <p class="text-red-200 text-sm">Breaches Found</p>
-                    <p class="text-white text-2xl font-bold">{{ stats.breaches_found }}</p>
+                    <p class="text-white text-2xl font-bold text-right w-full">{{ stats.breaches_found }}</p>
                 </div>
             </div>
         </div>
@@ -59,7 +59,7 @@
                 </div>
                 <div>
                     <p class="text-purple-200 text-sm">Accounts Discovered</p>
-                    <p class="text-white text-2xl font-bold">{{ stats.accounts_discovered }}</p>
+                    <p class="text-white text-2xl font-bold text-right w-full">{{ stats.accounts_discovered }}</p>
                 </div>
             </div>
         </div>
@@ -71,7 +71,7 @@
                 </div>
                 <div>
                     <p class="text-green-200 text-sm">Risk Score</p>
-                    <p class="text-white text-2xl font-bold">{{ stats.risk_score }}/100</p>
+                    <p class="text-white text-2xl font-bold text-right w-full">{{ stats.risk_score }}/100</p>
                 </div>
             </div>
         </div>
@@ -130,8 +130,8 @@
                                 </span>
                             {% endif %}
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-                            {{ scan.findings }} items
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm text-gray-300 text-right pr-8">{{ scan.findings }} items</div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                             <a href="#" class="text-indigo-400 hover:text-indigo-300 mr-3">View</a>
@@ -157,9 +157,9 @@
                 <p class="text-sm text-gray-400 mb-4">
                     Check if an email address has been compromised in a data breach.
                 </p>
-                <form action="{{ url_for('data_breach.check_email') }}" method="get" class="mt-5">
+                <form id="email-breach-form" action="{{ url_for('data_breach.check_email') }}" method="post" class="mt-5">
                     <div class="flex items-center">
-                        <input type="email" name="email" placeholder="Enter email address" required 
+                        <input type="email" name="email" id="email-input" placeholder="Enter email address" required 
                             class="flex-1 appearance-none border border-gray-600 bg-gray-700 rounded-l-md py-2 px-4 text-white leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
                         <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-r-md transition duration-300 ease-in-out">
                             <i class="fas fa-search"></i>
@@ -180,9 +180,9 @@
                 <p class="text-sm text-gray-400 mb-4">
                     Find accounts associated with a username across various platforms.
                 </p>
-                <form action="{{ url_for('username_search.search') }}" method="get" class="mt-5">
+                <form id="username-lookup-form" action="{{ url_for('username_search.search') }}" method="post" class="mt-5">
                     <div class="flex items-center">
-                        <input type="text" name="username" placeholder="Enter username" required 
+                        <input type="text" name="username" id="username-input" placeholder="Enter username" required 
                             class="flex-1 appearance-none border border-gray-600 bg-gray-700 rounded-l-md py-2 px-4 text-white leading-tight focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent" />
                         <button type="submit" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-r-md transition duration-300 ease-in-out">
                             <i class="fas fa-search"></i>
@@ -203,13 +203,17 @@
                 <p class="text-sm text-gray-400 mb-4">
                     Generate insights and risk assessments using AI based on gathered data.
                 </p>
-                <a href="{{ url_for('ai_analysis.index') }}" 
+                <button id="run-ai-analysis-btn" data-url="{{ url_for('ai_analysis.index') }}" 
                    class="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 transition duration-300 ease-in-out">
                     <i class="fas fa-chart-network mr-2"></i>
                     Run AI Analysis
-                </a>
+                </button>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/home.js') }}"></script>
 {% endblock %}

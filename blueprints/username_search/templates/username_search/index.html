@@ -1,119 +1,120 @@
 {% extends "base.html" %}
 
-{% block title %}OSINT Tracker - Searching Username{% endblock %}
-
-{% block extra_css %}
-<style>
-    @keyframes pulse {
-        0% {
-            transform: scale(1);
-            opacity: 1;
-        }
-        50% {
-            transform: scale(1.05);
-            opacity: 0.8;
-        }
-        100% {
-            transform: scale(1);
-            opacity: 1;
-        }
-    }
-    
-    .animated-pulse {
-        animation: pulse 2s infinite ease-in-out;
-    }
-    
-    .progress-bar-sherlock {
-        background-color: #8b5cf6; /* purple-500 */
-        transition: width 0.5s ease;
-    }
-    
-    .progress-bar-whatsmyname {
-        background-color: #3b82f6; /* blue-500 */
-        transition: width 0.5s ease;
-    }
-</style>
-{% endblock %}
+{% block title %}OSINT Tracker - Username Search{% endblock %}
 
 {% block content %}
 <div class="animate__animated animate__fadeIn">
     <!-- Header Section -->
     <div class="bg-gray-800 rounded-lg shadow-lg overflow-hidden mb-8 border border-gray-700">
-        <div class="px-6 py-6">
-            <div class="flex items-center justify-between">
-                <div>
-                    <h1 class="text-2xl font-bold text-white">Searching Username</h1>
-                    <p class="text-gray-300 mt-1">
-                        Searching for <span class="text-purple-400 font-semibold">{{ username }}</span> across multiple platforms
-                    </p>
+        <div class="px-6 py-8">
+            <h1 class="text-3xl font-bold text-white mb-2">Username Search</h1>
+            <p class="text-gray-300 mb-6">
+                Discover online accounts and profiles associated with a username across various platforms.
+                We use Sherlock and WhatsMyName tools to provide comprehensive results.
+            </p>
+            
+            <form id="username-search-form" action="{{ url_for('username_search.search') }}" method="post" class="w-full md:max-w-2xl mx-auto"
+                  data-loading="true"
+                  data-loading-message="Searching accounts for this username..."
+                  data-loading-details="We're checking hundreds of platforms using Sherlock and WhatsMyName. This may take up to a minute.">
+                <div class="flex flex-col md:flex-row">
+                    <div class="flex-grow mb-4 md:mb-0 md:mr-4">
+                        <label for="username" class="block text-sm font-medium text-gray-300 mb-2">
+                            Username
+                        </label>
+                        <input type="text" name="username" id="username" required
+                               class="w-full px-4 py-3 border border-gray-600 bg-gray-700 rounded-md text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                               placeholder="Enter a username">
+                    </div>
+                    <div class="flex items-end">
+                        <button type="submit" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-md transition duration-300 ease-in-out transform hover:-translate-y-1">
+                            <i class="fas fa-search mr-2"></i>Search Accounts
+                        </button>
+                    </div>
                 </div>
-                <div>
-                    <span class="text-sm text-gray-400">Started: <span id="search-time">Just now</span></span>
-                </div>
-            </div>
+            </form>
         </div>
     </div>
     
-    <!-- Progress Section -->
-    <div id="search-progress-container" class="bg-gray-800 rounded-lg shadow-lg overflow-hidden mb-8 border border-gray-700">
-        <div class="px-6 py-5 border-b border-gray-700">
-            <h3 class="text-lg font-medium text-white">Search Progress</h3>
+    <!-- Features Section -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <div class="bg-gray-800 rounded-lg shadow-lg border border-gray-700 p-6">
+            <div class="bg-purple-600 p-3 rounded-full inline-block mb-4">
+                <i class="fas fa-user-secret text-white text-xl"></i>
+            </div>
+            <h3 class="text-xl font-bold text-white mb-2">Sherlock Integration</h3>
+            <p class="text-gray-300 mb-4">
+                We use Sherlock to search for usernames across hundreds of social media platforms and websites.
+            </p>
+            <ul class="list-disc pl-5 space-y-1 text-gray-300">
+                <li>Fast parallel searching</li>
+                <li>Checks username availability</li>
+                <li>Finds existing profiles</li>
+                <li>Categorizes results</li>
+            </ul>
         </div>
-        <div class="px-6 py-6">
-            <div class="text-center mb-6">
-                <p id="search-status-text" class="text-white text-xl font-semibold animated-pulse">
-                    Starting search engines...
-                </p>
+        
+        <div class="bg-gray-800 rounded-lg shadow-lg border border-gray-700 p-6">
+            <div class="bg-blue-600 p-3 rounded-full inline-block mb-4">
+                <i class="fas fa-question-circle text-white text-xl"></i>
             </div>
-            
-            <!-- Sherlock Progress -->
-            <div class="mb-6">
-                <div class="flex justify-between mb-2">
-                    <div class="flex items-center">
-                        <div class="bg-purple-700 p-2 rounded-full mr-2">
-                            <i class="fas fa-user-secret text-white"></i>
-                        </div>
-                        <span class="text-white font-medium">Sherlock</span>
-                    </div>
-                    <span id="sherlock-counter" class="text-gray-300">0 accounts found</span>
-                </div>
-                <div class="w-full bg-gray-700 rounded-full h-4">
-                    <div id="sherlock-progress" class="progress-bar-sherlock h-4 rounded-full" style="width: 0%"></div>
-                </div>
-                <p class="text-sm text-gray-400 mt-1">Searching across hundreds of popular platforms</p>
-            </div>
-            
-            <!-- WhatsMyName Progress -->
-            <div class="mb-6">
-                <div class="flex justify-between mb-2">
-                    <div class="flex items-center">
-                        <div class="bg-blue-700 p-2 rounded-full mr-2">
-                            <i class="fas fa-question-circle text-white"></i>
-                        </div>
-                        <span class="text-white font-medium">WhatsMyName</span>
-                    </div>
-                    <span id="whatsmyname-counter" class="text-gray-300">0 accounts found</span>
-                </div>
-                <div class="w-full bg-gray-700 rounded-full h-4">
-                    <div id="whatsmyname-progress" class="progress-bar-whatsmyname h-4 rounded-full" style="width: 0%"></div>
-                </div>
-                <p class="text-sm text-gray-400 mt-1">Checking specialized and niche sites</p>
-            </div>
-            
-            <!-- Cancel Button -->
-            <div class="text-center mt-8">
-                <p class="text-gray-400 mb-4">This search may take up to 2 minutes to complete</p>
-                <a href="{{ url_for('username_search.index') }}" class="bg-gray-700 hover:bg-gray-600 text-white font-medium py-2 px-6 rounded-md transition duration-300 ease-in-out">
-                    Cancel Search
-                </a>
-            </div>
+            <h3 class="text-xl font-bold text-white mb-2">WhatsMyName Integration</h3>
+            <p class="text-gray-300 mb-4">
+                WhatsMyName extends our search capabilities to find additional platforms that Sherlock might miss.
+            </p>
+            <ul class="list-disc pl-5 space-y-1 text-gray-300">
+                <li>Complementary to Sherlock</li>
+                <li>Covers niche platforms</li>
+                <li>Constantly updated database</li>
+                <li>Finds accounts across various categories</li>
+            </ul>
         </div>
     </div>
     
-    <!-- Tips while waiting -->
+    <!-- How It Works Section -->
     <div class="bg-gray-800 rounded-lg shadow-lg overflow-hidden mb-8 border border-gray-700">
         <div class="px-6 py-5 border-b border-gray-700">
-            <h3 class="text-lg font-medium text-white">While You Wait</h3>
+            <h3 class="text-xl font-medium text-white">How It Works</h3>
+        </div>
+        <div class="px-6 py-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="text-center">
+                    <div class="bg-gray-700 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <span class="text-2xl font-bold text-purple-400">1</span>
+                    </div>
+                    <h4 class="text-lg font-medium text-white mb-2">Enter Username</h4>
+                    <p class="text-gray-300">
+                        Provide a username you want to search for across multiple platforms.
+                    </p>
+                </div>
+                
+                <div class="text-center">
+                    <div class="bg-gray-700 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <span class="text-2xl font-bold text-purple-400">2</span>
+                    </div>
+                    <h4 class="text-lg font-medium text-white mb-2">Parallel Search</h4>
+                    <p class="text-gray-300">
+                        Our tools search hundreds of websites simultaneously to find matching accounts.
+                    </p>
+                </div>
+                
+                <div class="text-center">
+                    <div class="bg-gray-700 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <span class="text-2xl font-bold text-purple-400">3</span>
+                    </div>
+                    <h4 class="text-lg font-medium text-white mb-2">View Results</h4>
+                    <p class="text-gray-300">
+                        Get a comprehensive report of all found accounts categorized by platform type.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Tips Section -->
+    <div class="bg-gray-800 rounded-lg shadow-lg overflow-hidden mb-8 border border-gray-700">
+        <div class="px-6 py-5 border-b border-gray-700">
+            <h3 class="text-xl font-medium text-white">Username Search Tips</h3>
         </div>
         <div class="px-6 py-6">
             <div class="space-y-4">
@@ -122,10 +123,10 @@
                         <i class="fas fa-lightbulb text-yellow-500 mr-3"></i>
                     </div>
                     <div>
-                        <h4 class="text-white font-medium">Usernames vs. Email Searches</h4>
+                        <h4 class="text-white font-medium">Try Common Variations</h4>
                         <p class="text-gray-300 mt-1">
-                            Username searches find public accounts on social media, forums, and other sites, while email searches 
-                            find data breaches that may include private information. For a complete picture, try both methods.
+                            People often use the same username across platforms with slight variations. Try searching 
+                            for common modifications like adding numbers, underscores, or dots.
                         </p>
                     </div>
                 </div>
@@ -135,10 +136,10 @@
                         <i class="fas fa-lightbulb text-yellow-500 mr-3"></i>
                     </div>
                     <div>
-                        <h4 class="text-white font-medium">Understanding Results</h4>
+                        <h4 class="text-white font-medium">Combine Search Methods</h4>
                         <p class="text-gray-300 mt-1">
-                            Not all accounts found may belong to the same person. Many people use similar usernames,
-                            especially common names or popular handles. Verify findings with additional research.
+                            For a more comprehensive search, combine username searches with email breaches and other 
+                            OSINT techniques to build a complete profile.
                         </p>
                     </div>
                 </div>
@@ -148,10 +149,23 @@
                         <i class="fas fa-lightbulb text-yellow-500 mr-3"></i>
                     </div>
                     <div>
-                        <h4 class="text-white font-medium">AI Analysis</h4>
+                        <h4 class="text-white font-medium">Check Aliases</h4>
                         <p class="text-gray-300 mt-1">
-                            Once your search is complete, try the AI Analysis feature to generate insights about the 
-                            discovered accounts and identify patterns across platforms.
+                            If you know alternate usernames or aliases the person uses, search for those as well to
+                            discover additional accounts.
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="flex items-start">
+                    <div class="flex-shrink-0 mt-1">
+                        <i class="fas fa-lightbulb text-yellow-500 mr-3"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-white font-medium">Be Patient</h4>
+                        <p class="text-gray-300 mt-1">
+                            Searching across hundreds of sites can take time. Be patient and allow the search to complete
+                            fully for the most comprehensive results.
                         </p>
                     </div>
                 </div>
@@ -162,91 +176,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const search_id = "{{ search_id }}";
-        const username = "{{ username }}";
-        const startTime = new Date();
-        
-        // Update the time display
-        function updateTimeDisplay() {
-            const now = new Date();
-            const diffInSeconds = Math.floor((now - startTime) / 1000);
-            
-            let timeDisplay;
-            if (diffInSeconds < 60) {
-                timeDisplay = `${diffInSeconds} seconds ago`;
-            } else if (diffInSeconds < 3600) {
-                const minutes = Math.floor(diffInSeconds / 60);
-                timeDisplay = `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
-            } else {
-                const hours = Math.floor(diffInSeconds / 3600);
-                timeDisplay = `${hours} hour${hours > 1 ? 's' : ''} ago`;
-            }
-            
-            document.getElementById('search-time').textContent = timeDisplay;
-        }
-        
-        // Initial update
-        updateTimeDisplay();
-        
-        // Update every 10 seconds
-        setInterval(updateTimeDisplay, 10000);
-        
-        // Function to poll for progress
-        function pollProgress() {
-            fetch('/username-search/search-progress', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: new URLSearchParams({
-                    'username': username,
-                    'search_id': search_id
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                // Update progress bars
-                const sherlockProgress = document.getElementById('sherlock-progress');
-                const whatsmynameProgress = document.getElementById('whatsmyname-progress');
-                const sherlockCounter = document.getElementById('sherlock-counter');
-                const whatsmynameCounter = document.getElementById('whatsmyname-counter');
-                const statusText = document.getElementById('search-status-text');
-                
-                if (data.sherlock) {
-                    sherlockProgress.style.width = `${data.sherlock.percent}%`;
-                    sherlockCounter.textContent = `${data.sherlock.found || 0} accounts found`;
-                }
-                
-                if (data.whatsmyname) {
-                    whatsmynameProgress.style.width = `${data.whatsmyname.percent}%`;
-                    whatsmynameCounter.textContent = `${data.whatsmyname.found || 0} accounts found`;
-                }
-                
-                // Update status text
-                if (data.status) {
-                    statusText.textContent = data.status;
-                }
-                
-                // Check if search is complete
-                if (data.is_complete) {
-                    // Redirect to results page
-                    window.location.href = `/username-search/results/${search_id}`;
-                } else {
-                    // Continue polling
-                    setTimeout(pollProgress, 1000);
-                }
-            })
-            .catch(error => {
-                console.error('Error polling progress:', error);
-                // Continue polling despite errors
-                setTimeout(pollProgress, 2000);
-            });
-        }
-        
-        // Start polling
-        pollProgress();
-    });
-</script>
+<script src="{{ url_for('static', filename='js/username-search.js') }}"></script>
 {% endblock %}

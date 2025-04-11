@@ -1,0 +1,279 @@
+{% extends "base.html" %}
+
+{% block title %}OSINT Tracker - Searching Username{% endblock %}
+
+{% block extra_css %}
+<style>
+    @keyframes pulse {
+        0% {
+            transform: scale(1);
+            opacity: 1;
+        }
+        50% {
+            transform: scale(1.05);
+            opacity: 0.8;
+        }
+        100% {
+            transform: scale(1);
+            opacity: 1;
+        }
+    }
+    
+    .animated-pulse {
+        animation: pulse 2s infinite ease-in-out;
+    }
+    
+    .progress-bar-sherlock {
+        background-color: #8b5cf6; /* purple-500 */
+        transition: width 0.5s ease;
+    }
+    
+    .progress-bar-whatsmyname {
+        background-color: #3b82f6; /* blue-500 */
+        transition: width 0.5s ease;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="animate__animated animate__fadeIn">
+    <!-- Header Section -->
+    <div class="bg-gray-800 rounded-lg shadow-lg overflow-hidden mb-8 border border-gray-700">
+        <div class="px-6 py-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-2xl font-bold text-white">Searching Username</h1>
+                    <p class="text-gray-300 mt-1">
+                        Searching for <span class="text-purple-400 font-semibold">{{ username }}</span> across multiple platforms
+                    </p>
+                </div>
+                <div>
+                    <span class="text-sm text-gray-400">Started: <span id="search-time">Just now</span></span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Progress Section -->
+    <div id="search-progress-container" class="bg-gray-800 rounded-lg shadow-lg overflow-hidden mb-8 border border-gray-700">
+        <div class="px-6 py-5 border-b border-gray-700">
+            <h3 class="text-lg font-medium text-white">Search Progress</h3>
+        </div>
+        <div class="px-6 py-6">
+            <div class="text-center mb-6">
+                <p id="search-status-text" class="text-white text-xl font-semibold animated-pulse">
+                    Starting search engines...
+                </p>
+            </div>
+            
+            <!-- Sherlock Progress -->
+            <div class="mb-6">
+                <div class="flex justify-between mb-2">
+                    <div class="flex items-center">
+                        <div class="bg-purple-700 p-2 rounded-full mr-2">
+                            <i class="fas fa-user-secret text-white"></i>
+                        </div>
+                        <span class="text-white font-medium">Sherlock</span>
+                    </div>
+                    <span id="sherlock-counter" class="text-gray-300">Searching...</span>
+                </div>
+                <div class="w-full bg-gray-700 rounded-full h-4">
+                    <div id="sherlock-progress" class="progress-bar-sherlock h-4 rounded-full" style="width: 10%"></div>
+                </div>
+                <p class="text-sm text-gray-400 mt-1">Searching across hundreds of popular platforms</p>
+            </div>
+            
+            <!-- WhatsMyName Progress -->
+            <div class="mb-6">
+                <div class="flex justify-between mb-2">
+                    <div class="flex items-center">
+                        <div class="bg-blue-700 p-2 rounded-full mr-2">
+                            <i class="fas fa-question-circle text-white"></i>
+                        </div>
+                        <span class="text-white font-medium">WhatsMyName</span>
+                    </div>
+                    <span id="whatsmyname-counter" class="text-gray-300">Searching...</span>
+                </div>
+                <div class="w-full bg-gray-700 rounded-full h-4">
+                    <div id="whatsmyname-progress" class="progress-bar-whatsmyname h-4 rounded-full" style="width: 10%"></div>
+                </div>
+                <p class="text-sm text-gray-400 mt-1">Checking specialized and niche sites</p>
+            </div>
+            
+            <!-- Cancel Button -->
+            <div class="text-center mt-8">
+                <p class="text-gray-400 mb-4">This search may take up to 2 minutes to complete</p>
+                <a href="{{ url_for('username_search.index') }}" class="bg-gray-700 hover:bg-gray-600 text-white font-medium py-2 px-6 rounded-md transition duration-300 ease-in-out">
+                    Cancel Search
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Tips while waiting -->
+    <div class="bg-gray-800 rounded-lg shadow-lg overflow-hidden mb-8 border border-gray-700">
+        <div class="px-6 py-5 border-b border-gray-700">
+            <h3 class="text-lg font-medium text-white">While You Wait</h3>
+        </div>
+        <div class="px-6 py-6">
+            <div class="space-y-4">
+                <div class="flex items-start">
+                    <div class="flex-shrink-0 mt-1">
+                        <i class="fas fa-lightbulb text-yellow-500 mr-3"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-white font-medium">Usernames vs. Email Searches</h4>
+                        <p class="text-gray-300 mt-1">
+                            Username searches find public accounts on social media, forums, and other sites, while email searches 
+                            find data breaches that may include private information. For a complete picture, try both methods.
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="flex items-start">
+                    <div class="flex-shrink-0 mt-1">
+                        <i class="fas fa-lightbulb text-yellow-500 mr-3"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-white font-medium">Understanding Results</h4>
+                        <p class="text-gray-300 mt-1">
+                            Not all accounts found may belong to the same person. Many people use similar usernames,
+                            especially common names or popular handles. Verify findings with additional research.
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="flex items-start">
+                    <div class="flex-shrink-0 mt-1">
+                        <i class="fas fa-lightbulb text-yellow-500 mr-3"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-white font-medium">AI Analysis</h4>
+                        <p class="text-gray-300 mt-1">
+                            Once your search is complete, try the AI Analysis feature to generate insights about the 
+                            discovered accounts and identify patterns across platforms.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Hidden form for submitting results -->
+    <form id="results-form" action="{{ url_for('username_search.show_results') }}" method="post" style="display: none;">
+        <input type="hidden" name="results" id="results-input">
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const username = "{{ username }}";
+        const startTime = new Date();
+        
+        // Update the time display
+        function updateTimeDisplay() {
+            const now = new Date();
+            const diffInSeconds = Math.floor((now - startTime) / 1000);
+            
+            let timeDisplay;
+            if (diffInSeconds < 60) {
+                timeDisplay = `${diffInSeconds} seconds ago`;
+            } else if (diffInSeconds < 3600) {
+                const minutes = Math.floor(diffInSeconds / 60);
+                timeDisplay = `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+            } else {
+                const hours = Math.floor(diffInSeconds / 3600);
+                timeDisplay = `${hours} hour${hours > 1 ? 's' : ''} ago`;
+            }
+            
+            document.getElementById('search-time').textContent = timeDisplay;
+        }
+        
+        // Initial update
+        updateTimeDisplay();
+        
+        // Update every 10 seconds
+        setInterval(updateTimeDisplay, 10000);
+        
+        // Animate progress bars
+        function animateProgress() {
+            const sherlockProgress = document.getElementById('sherlock-progress');
+            const whatsmynameProgress = document.getElementById('whatsmyname-progress');
+            
+            let sherlockWidth = 10;
+            let whatsmynameWidth = 10;
+            
+            const interval = setInterval(() => {
+                if (sherlockWidth < 95) {
+                    sherlockWidth += 0.5;
+                    sherlockProgress.style.width = `${sherlockWidth}%`;
+                }
+                
+                if (whatsmynameWidth < 90) {
+                    whatsmynameWidth += 0.2;
+                    whatsmynameProgress.style.width = `${whatsmynameWidth}%`;
+                }
+            }, 500);
+            
+            return interval;
+        }
+        
+        // Start progress animation
+        const progressInterval = animateProgress();
+        
+        // Start the actual search using AJAX
+        fetch('{{ url_for("username_search.process_search") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({
+                'username': username
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Stop the progress animation
+            clearInterval(progressInterval);
+            
+            if (data.success) {
+                // Update progress bars to 100%
+                document.getElementById('sherlock-progress').style.width = '100%';
+                document.getElementById('whatsmyname-progress').style.width = '100%';
+                
+                // Update counters
+                const sherlockResults = data.results.sherlock || [];
+                const whatsmynameResults = data.results.whatsmyname || [];
+                document.getElementById('sherlock-counter').textContent = `${sherlockResults.length} accounts found`;
+                document.getElementById('whatsmyname-counter').textContent = `${whatsmynameResults.length} accounts found`;
+                
+                // Update status text
+                document.getElementById('search-status-text').textContent = 'Search completed!';
+                document.getElementById('search-status-text').classList.remove('animated-pulse');
+                
+                // Convert datetime objects to strings for JSON
+                const results = data.results;
+                results.scan_date = new Date().toISOString();
+                
+                // Submit form with results to show results page
+                document.getElementById('results-input').value = JSON.stringify(results);
+                document.getElementById('results-form').submit();
+            } else {
+                // Handle error
+                document.getElementById('sherlock-progress').style.width = '100%';
+                document.getElementById('whatsmyname-progress').style.width = '100%';
+                document.getElementById('search-status-text').textContent = 'Error: ' + (data.error || 'Unknown error');
+                document.getElementById('search-status-text').classList.remove('animated-pulse');
+            }
+        })
+        .catch(error => {
+            // Handle network error
+            clearInterval(progressInterval);
+            document.getElementById('search-status-text').textContent = 'Error: ' + error.message;
+            document.getElementById('search-status-text').classList.remove('animated-pulse');
+        });
+    });
+</script>
+{% endblock %}

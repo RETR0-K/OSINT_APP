@@ -1,84 +1,111 @@
-/* Add this to your static/css/style.css file */
+/* Add to your static/css/style.css file */
 
-.loading-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(17, 24, 39, 0.8); /* bg-gray-900 with opacity */
-    z-index: 9999;
+/* Stats card styling fixes */
+.stats-card {
+    display: flex;
+    align-items: center;
+}
+
+.stats-card-icon {
+    flex-shrink: 0;
+    margin-right: 1rem;
+}
+
+.stats-card-content {
+    flex-grow: 1;
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    backdrop-filter: blur(5px);
-    transition: opacity 0.3s ease-in-out;
-    opacity: 0;
-    pointer-events: none;
+    width: 100%;
 }
 
-.loading-overlay.active {
-    opacity: 1;
-    pointer-events: all;
-}
-
-.loading-spinner {
-    width: 80px;
-    height: 80px;
-    margin-bottom: 20px;
-    border-radius: 50%;
-    border: 5px solid rgba(59, 130, 246, 0.2); /* blue-600 with opacity */
-    border-top-color: #3B82F6; /* blue-600 */
-    animation: spin 1s infinite linear;
-}
-
-.loading-pulse {
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
-    background-color: #3B82F6; /* blue-600 */
-    opacity: 0.5;
-    position: absolute;
-    animation: pulse 1.5s infinite ease-in-out;
-}
-
-.loading-message {
-    color: white;
-    font-size: 1.25rem;
-    font-weight: 600;
-    margin-top: 1rem;
-    text-align: center;
-}
-
-.loading-details {
-    color: #9CA3AF; /* gray-400 */
+.stats-card-label {
     font-size: 0.875rem;
-    max-width: 300px;
-    text-align: center;
-    margin-top: 0.5rem;
+    opacity: 0.9;
 }
 
-@keyframes spin {
-    0% {
-        transform: rotate(0deg);
-    }
-    100% {
-        transform: rotate(360deg);
-    }
+.stats-card-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    text-align: right;
+    width: 100%;
 }
 
-@keyframes pulse {
-    0% {
-        transform: scale(0.6);
-        opacity: 0.5;
-    }
-    50% {
-        transform: scale(0.8);
-        opacity: 0.3;
-    }
-    100% {
-        transform: scale(0.6);
-        opacity: 0.5;
-    }
+/* Risk assessment gauge fixes */
+.risk-gauge {
+    position: relative;
+    width: 150px;
+    height: 150px;
+    margin: 0 auto;
+}
+
+.risk-gauge-ring {
+    stroke: #374151;
+    fill: none;
+    stroke-width: 8;
+}
+
+.risk-gauge-arc {
+    fill: none;
+    stroke-linecap: round;
+    stroke-width: 8;
+    transition: stroke-dasharray 0.5s ease;
+}
+
+.risk-gauge-value {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: white;
+}
+
+.risk-gauge-label {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.75rem;
+    color: #9CA3AF;
+}
+
+/* Fix findings column alignment */
+.findings-column {
+    text-align: right;
+    padding-right: 2rem;
+}
+
+/* Fix table cell alignment */
+.table-cell-right {
+    text-align: right;
+}
+
+.table-numeric {
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+}
+
+/* SVG circular progress styles */
+.svg-circle-bg {
+    fill: none;
+    stroke: #374151;
+    stroke-width: 3.8;
+}
+
+.svg-circle {
+    fill: none;
+    stroke-width: 3.8;
+    stroke-linecap: round;
+    transform: rotate(-90deg);
+    transform-origin: 50% 50%;
+    transition: stroke-dashoffset 0.5s ease;
+}
+
+.svg-circle-text {
+    font-size: 2rem;
+    font-weight: bold;
+    fill: white;
+    dominant-baseline: middle;
+    text-anchor: middle;
 }
