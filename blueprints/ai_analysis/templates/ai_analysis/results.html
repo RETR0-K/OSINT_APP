@@ -87,4 +87,123 @@
     
     <!-- AI Insights -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div class="
+        <div class="md:col-span-2 bg-gray-800 rounded-lg shadow-lg overflow-hidden border border-gray-700">
+            <div class="px-6 py-5 border-b border-gray-700">
+                <h3 class="text-lg font-medium text-white">AI-Generated Insights</h3>
+            </div>
+            <div class="px-6 py-6">
+                {% if results.insights %}
+                    <div class="space-y-6">
+                        {% for insight in results.insights %}
+                            <div class="bg-gray-750 p-4 rounded-lg border border-gray-700">
+                                <div class="flex items-start">
+                                    <div class="flex-shrink-0 mt-1">
+                                        <div class="p-2 rounded-full 
+                                                    {% if insight.confidence == 'High' %}bg-green-900 text-green-300
+                                                    {% elif insight.confidence == 'Medium' %}bg-yellow-900 text-yellow-300
+                                                    {% else %}bg-gray-900 text-gray-300{% endif %}">
+                                            <i class="fas fa-lightbulb"></i>
+                                        </div>
+                                    </div>
+                                    <div class="ml-4">
+                                        <h4 class="text-white font-medium">{{ insight.title }}</h4>
+                                        <div class="flex items-center mt-1 mb-2">
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                                                         {% if insight.category == 'Identity' %}bg-blue-900 text-blue-300
+                                                         {% elif insight.category == 'Exposure' %}bg-red-900 text-red-300
+                                                         {% elif insight.category == 'Professional' %}bg-green-900 text-green-300
+                                                         {% elif insight.category == 'Security' %}bg-purple-900 text-purple-300
+                                                         {% elif insight.category == 'Privacy' %}bg-indigo-900 text-indigo-300
+                                                         {% elif insight.category == 'Interests' %}bg-yellow-900 text-yellow-300
+                                                         {% else %}bg-gray-900 text-gray-300{% endif %}">
+                                                {{ insight.category }}
+                                            </span>
+                                            <span class="ml-2 text-xs text-gray-400">
+                                                Confidence: 
+                                                <span class="{% if insight.confidence == 'High' %}text-green-400
+                                                             {% elif insight.confidence == 'Medium' %}text-yellow-400
+                                                             {% else %}text-gray-400{% endif %}">
+                                                    {{ insight.confidence }}
+                                                </span>
+                                            </span>
+                                        </div>
+                                        <p class="text-gray-300">{{ insight.description }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-8">
+                        <div class="bg-gray-700 p-4 rounded-full inline-block mb-4">
+                            <i class="fas fa-exclamation-circle text-gray-400 text-2xl"></i>
+                        </div>
+                        <p class="text-gray-300 text-lg">No insights were generated for this analysis.</p>
+                        <p class="text-gray-400 mt-2">This could be due to limited data or API errors.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Security Recommendations -->
+        <div class="md:col-span-1 bg-gray-800 rounded-lg shadow-lg overflow-hidden border border-gray-700">
+            <div class="px-6 py-5 border-b border-gray-700">
+                <h3 class="text-lg font-medium text-white">Security Recommendations</h3>
+            </div>
+            <div class="px-6 py-6">
+                {% if results.recommendations %}
+                    <div class="space-y-4">
+                        {% for rec in results.recommendations %}
+                            <div class="bg-gray-750 p-4 rounded-lg border border-gray-700">
+                                <div class="flex items-start">
+                                    <div class="flex-shrink-0 mt-1">
+                                        <div class="p-2 rounded-full 
+                                                    {% if rec.priority == 'Critical' %}bg-red-900 text-red-300
+                                                    {% elif rec.priority == 'High' %}bg-orange-900 text-orange-300
+                                                    {% elif rec.priority == 'Medium' %}bg-yellow-900 text-yellow-300
+                                                    {% else %}bg-blue-900 text-blue-300{% endif %}">
+                                            <i class="fas fa-shield-alt"></i>
+                                        </div>
+                                    </div>
+                                    <div class="ml-4">
+                                        <h4 class="text-white font-medium">{{ rec.title }}</h4>
+                                        <div class="flex items-center mt-1 mb-2">
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                                                         {% if rec.priority == 'Critical' %}bg-red-900 text-red-300
+                                                         {% elif rec.priority == 'High' %}bg-orange-900 text-orange-300
+                                                         {% elif rec.priority == 'Medium' %}bg-yellow-900 text-yellow-300
+                                                         {% else %}bg-blue-900 text-blue-300{% endif %}">
+                                                {{ rec.priority }} Priority
+                                            </span>
+                                            <span class="ml-2 text-xs text-gray-400">{{ rec.category }}</span>
+                                        </div>
+                                        <p class="text-gray-300">{{ rec.description }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-8">
+                        <div class="bg-gray-700 p-4 rounded-full inline-block mb-4">
+                            <i class="fas fa-exclamation-circle text-gray-400 text-2xl"></i>
+                        </div>
+                        <p class="text-gray-300 text-lg">No recommendations available.</p>
+                        <p class="text-gray-400 mt-2">This could be due to limited data or API errors.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Action Buttons -->
+    <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 mb-8">
+        <a href="{{ url_for('ai_analysis.index') }}" class="flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 md:text-lg transition duration-300 ease-in-out">
+            <i class="fas fa-arrow-left mr-2"></i> Back to AI Analysis
+        </a>
+        <a href="{{ url_for('home.index') }}" class="flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-green-600 hover:bg-green-700 md:text-lg transition duration-300 ease-in-out">
+            <i class="fas fa-home mr-2"></i> Return to Dashboard
+        </a>
+    </div>
+</div>
+{% endblock %}

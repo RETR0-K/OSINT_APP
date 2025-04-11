@@ -36,28 +36,15 @@
                         <a href="{{ url_for('data_breach.index') }}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white">Data Breach</a>
                         <a href="{{ url_for('username_search.index') }}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white">Username Search</a>
                         <a href="{{ url_for('ai_analysis.index') }}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white">AI Analysis</a>
-                        
-                        <!-- Add links to new modules if implemented -->
-                        {% if 'phone_lookup_bp' in config.get('REGISTERED_BLUEPRINTS', []) %}
-                        <a href="{{ url_for('phone_lookup.index') }}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white">Phone Lookup</a>
-                        {% endif %}
-                        
-                        {% if 'domain_intel_bp' in config.get('REGISTERED_BLUEPRINTS', []) %}
-                        <a href="{{ url_for('domain_intel.index') }}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white">Domain Intel</a>
-                        {% endif %}
-                        
-                        {% if 'social_monitor_bp' in config.get('REGISTERED_BLUEPRINTS', []) %}
-                        <a href="{{ url_for('social_monitor.index') }}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white">Social Monitor</a>
-                        {% endif %}
                     </div>
                 </div>
                 <div class="flex items-center">
                     <!-- User Authentication Links -->
                     {% if current_user.is_authenticated %}
                         <div class="hidden md:flex md:items-center md:space-x-4 mr-4">
-                            <span class="text-sm text-gray-300">
+                            <a href="{{ url_for('auth.profile') }}" class="text-sm text-gray-300 hover:text-white">
                                 <i class="fas fa-user-circle mr-1"></i> {{ current_user.username }}
-                            </span>
+                            </a>
                             <a href="{{ url_for('auth.logout') }}" class="text-sm text-gray-300 hover:text-white">
                                 <i class="fas fa-sign-out-alt mr-1"></i> Logout
                             </a>
@@ -73,9 +60,22 @@
                         </div>
                     {% endif %}
                     
-                    <button class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md transition duration-300 ease-in-out transform hover:-translate-y-1">
-                        <i class="fas fa-search mr-2"></i>New Scan
-                    </button>
+                    <div class="dropdown relative">
+                        <button class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md transition duration-300 ease-in-out">
+                            <i class="fas fa-search mr-2"></i>New Scan
+                        </button>
+                        <div class="dropdown-menu hidden absolute right-0 mt-2 w-48 bg-gray-800 rounded-md shadow-lg py-1 z-10">
+                            <a href="{{ url_for('username_search.index') }}" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white">
+                                <i class="fas fa-user-tag mr-2"></i>Username Search
+                            </a>
+                            <a href="{{ url_for('data_breach.index') }}" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white">
+                                <i class="fas fa-shield-alt mr-2"></i>Data Breach Check
+                            </a>
+                            <a href="{{ url_for('ai_analysis.index') }}" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white">
+                                <i class="fas fa-brain mr-2"></i>AI Analysis
+                            </a>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -88,24 +88,11 @@
                 <a href="{{ url_for('username_search.index') }}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white">Username Search</a>
                 <a href="{{ url_for('ai_analysis.index') }}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white">AI Analysis</a>
                 
-                <!-- Add mobile links to new modules if implemented -->
-                {% if 'phone_lookup_bp' in config.get('REGISTERED_BLUEPRINTS', []) %}
-                <a href="{{ url_for('phone_lookup.index') }}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white">Phone Lookup</a>
-                {% endif %}
-                
-                {% if 'domain_intel_bp' in config.get('REGISTERED_BLUEPRINTS', []) %}
-                <a href="{{ url_for('domain_intel.index') }}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white">Domain Intel</a>
-                {% endif %}
-                
-                {% if 'social_monitor_bp' in config.get('REGISTERED_BLUEPRINTS', []) %}
-                <a href="{{ url_for('social_monitor.index') }}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white">Social Monitor</a>
-                {% endif %}
-                
                 <!-- Auth links for mobile -->
                 {% if current_user.is_authenticated %}
-                    <span class="block px-3 py-2 text-base font-medium text-gray-300">
+                    <a href="{{ url_for('auth.profile') }}" class="block px-3 py-2 text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white">
                         <i class="fas fa-user-circle mr-1"></i> {{ current_user.username }}
-                    </span>
+                    </a>
                     <a href="{{ url_for('auth.logout') }}" class="block px-3 py-2 text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white">
                         <i class="fas fa-sign-out-alt mr-1"></i> Logout
                     </a>
@@ -117,3 +104,55 @@
                         <i class="fas fa-user-plus mr-1"></i> Register
                     </a>
                 {% endif %}
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Main Content Container -->
+    <main class="flex-grow container mx-auto px-4 py-8">
+        {% block content %}{% endblock %}
+    </main>
+    
+    <!-- Footer -->
+    <footer class="bg-gray-800 border-t border-gray-700 py-6">
+        <div class="container mx-auto px-4">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="mb-4 md:mb-0">
+                    <div class="flex items-center">
+                        <i class="fas fa-eye text-blue-500 text-xl mr-2"></i>
+                        <span class="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-600">OSINT Tracker</span>
+                    </div>
+                    <p class="text-gray-400 text-sm mt-1">Discover digital footprints and analyze online presence</p>
+                </div>
+                <div class="flex space-x-4">
+                    <a href="#" class="text-gray-400 hover:text-white">
+                        <i class="fab fa-github text-xl"></i>
+                    </a>
+                    <a href="#" class="text-gray-400 hover:text-white">
+                        <i class="fab fa-twitter text-xl"></i>
+                    </a>
+                    <a href="#" class="text-gray-400 hover:text-white">
+                        <i class="fas fa-envelope text-xl"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="mt-4 text-center text-gray-500 text-sm">
+                © 2025 OSINT Tracker. All rights reserved.
+            </div>
+        </div>
+    </footer>
+    
+    <!-- Loading Overlay -->
+    <div class="loading-overlay">
+        <div class="loading-pulse"></div>
+        <div class="loading-spinner"></div>
+        <div class="loading-message">Processing your request...</div>
+        <div class="loading-details">This may take a few moments while we search multiple sources.</div>
+    </div>
+    
+    <!-- JavaScript -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

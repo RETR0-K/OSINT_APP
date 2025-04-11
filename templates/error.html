@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}OSINT Tracker - Error {{ error_code }}{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-center min-h-screen">
+    <div class="bg-gray-800 rounded-lg shadow-xl overflow-hidden border border-gray-700 p-8 max-w-md w-full animate__animated animate__fadeIn">
+        <div class="text-center">
+            <div class="bg-red-600 rounded-full p-4 inline-block mb-4">
+                <i class="fas fa-exclamation-triangle text-white text-3xl"></i>
+            </div>
+            
+            <h1 class="text-4xl font-bold text-white mb-2">Error {{ error_code }}</h1>
+            <p class="text-xl text-gray-300 mb-6">{{ error_message }}</p>
+            
+            <a href="{{ url_for('home.index') }}" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-md transition duration-300 ease-in-out">
+                <i class="fas fa-home mr-2"></i> Return to Dashboard
+            </a>
+            
+            <p class="mt-6 text-gray-400">
+                If you believe this is a bug, please report it to the administrator.
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

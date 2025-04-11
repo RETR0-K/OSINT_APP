@@ -1,8 +1,7 @@
-# blueprints/ai_analysis/utils.py
 import json
 import time
 from flask import current_app
-from openai import OpenAI
+import requests
 
 def generate_osint_analysis(target, analysis_type, data):
     """
@@ -10,21 +9,17 @@ def generate_osint_analysis(target, analysis_type, data):
     """
     api_key = current_app.config.get('OPENAI_API_KEY')
     
-    # Use mock data if no API key is available
-    if not api_key:
-        return _get_mock_insights(target, analysis_type)
-    
+    # Use mock data if no API key is available or if OpenAI API call fails
     try:
         # Initialize the OpenAI client with the API key
-        client = OpenAI(api_key=api_key)
-        
-        # Prepare the system message based on analysis type
+        if not api_key:
+            print("No OpenAI API key provided. Using mock data.")
+            return _get_mock_insights(target, analysis_type)
+            
+        # Prepare data for API call
         system_message = _get_system_prompt(analysis_type)
-        
-        # Format the data for the AI
         formatted_data = json.dumps(data, indent=2)
         
-        # Create user message with the data
         user_message = f"""
         Target: {target}
         Analysis Type: {analysis_type}
@@ -35,25 +30,41 @@ def generate_osint_analysis(target, analysis_type, data):
         Please analyze this data and provide insights.
         """
         
-        # Make the API call to OpenAI using the new client format and gpt-3.5-turbo model
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo",  # Using gpt-3.5-turbo which is available to all users
-            messages=[
+        # Make API call to OpenAI
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {api_key}"
+        }
+        
+        payload = {
+            "model": "gpt-3.5-turbo",
+            "messages": [
                 {"role": "system", "content": system_message},
                 {"role": "user", "content": user_message}
             ],
-            temperature=0.7,
-            max_tokens=2000
+            "temperature": 0.7,
+            "max_tokens": 2000
+        }
+        
+        response = requests.post(
+            "https://api.openai.com/v1/chat/completions",
+            headers=headers,
+            json=payload,
+            timeout=30
         )
         
-        # Extract the AI's response
-        ai_response = response.choices[0].message.content
-        
-        # Parse the response into our insights format
+        # Check for API errors
+        if response.status_code != 200:
+            print(f"Error generating AI analysis: Error code: {response.status_code} - {response.json()}")
+            return _get_mock_insights(target, analysis_type)
+            
+        # Extract and parse response
+        response_data = response.json()
+        ai_response = response_data['choices'][0]['message']['content']
         insights = _parse_ai_response(ai_response, analysis_type)
         
         return insights
-    
+        
     except Exception as e:
         print(f"Error generating AI analysis: {e}")
         return _get_mock_insights(target, analysis_type)
@@ -64,17 +75,14 @@ def generate_security_recommendations(analysis_type, insights):
     """
     api_key = current_app.config.get('OPENAI_API_KEY')
     
-    # Use mock data if no API key is available
-    if not api_key:
-        return _get_mock_recommendations(analysis_type)
-    
+    # Use mock data if no API key is available or if OpenAI API call fails
     try:
         # Initialize the OpenAI client with the API key
-        client = OpenAI(api_key=api_key)
-        
-        # Format the insights for the AI
-        formatted_insights = json.dumps(insights, indent=2)
-        
+        if not api_key:
+            print("No OpenAI API key provided. Using mock data for recommendations.")
+            return _get_mock_recommendations(analysis_type)
+            
+        # Prepare data for API call
         system_message = """
         You are a cybersecurity expert specialized in providing actionable security recommendations based on OSINT findings.
         Provide specific, practical recommendations to address security concerns identified in the insights.
@@ -87,6 +95,9 @@ def generate_security_recommendations(analysis_type, insights):
         Format your response as a JSON array of recommendation objects.
         """
         
+        # Format the insights for the AI
+        formatted_insights = json.dumps(insights, indent=2)
+        
         user_message = f"""
         Analysis Type: {analysis_type}
         
@@ -96,19 +107,37 @@ def generate_security_recommendations(analysis_type, insights):
         Please provide security recommendations based on these insights.
         """
         
-        # Make the API call to OpenAI using the new client format and gpt-3.5-turbo model
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo",  # Using gpt-3.5-turbo which is available to all users
-            messages=[
+        # Make API call to OpenAI
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {api_key}"
+        }
+        
+        payload = {
+            "model": "gpt-3.5-turbo",
+            "messages": [
                 {"role": "system", "content": system_message},
                 {"role": "user", "content": user_message}
             ],
-            temperature=0.7,
-            max_tokens=2000
+            "temperature": 0.7,
+            "max_tokens": 2000
+        }
+        
+        response = requests.post(
+            "https://api.openai.com/v1/chat/completions",
+            headers=headers,
+            json=payload,
+            timeout=30
         )
         
-        # Extract the AI's response
-        ai_response = response.choices[0].message.content
+        # Check for API errors
+        if response.status_code != 200:
+            print(f"Error generating security recommendations: Error code: {response.status_code} - {response.json()}")
+            return _get_mock_recommendations(analysis_type)
+            
+        # Extract and parse response
+        response_data = response.json()
+        ai_response = response_data['choices'][0]['message']['content']
         
         # Parse the response into our recommendations format
         try:
@@ -128,6 +157,9 @@ def generate_security_recommendations(analysis_type, insights):
                 if all(k in rec for k in ['title', 'description', 'priority', 'category']):
                     formatted_recommendations.append(rec)
             
+            if not formatted_recommendations:
+                return _get_mock_recommendations(analysis_type)
+                
             return formatted_recommendations
         except Exception as e:
             print(f"Error parsing AI recommendations: {e}")
@@ -137,7 +169,6 @@ def generate_security_recommendations(analysis_type, insights):
         print(f"Error generating security recommendations: {e}")
         return _get_mock_recommendations(analysis_type)
 
-# The rest of the code remains the same
 def _get_system_prompt(analysis_type):
     """Get the appropriate system prompt based on analysis type"""
     prompts = {
@@ -243,6 +274,9 @@ def _parse_ai_response(ai_response, analysis_type):
             if all(k in insight for k in ['title', 'description', 'confidence', 'category']):
                 formatted_insights.append(insight)
         
+        if not formatted_insights:
+            return _get_mock_insights("Unknown Target", analysis_type)
+            
         return formatted_insights
     
     except Exception as e:
