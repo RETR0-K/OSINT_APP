@@ -1,9 +1,11 @@
 # blueprints/username_search/routes.py
-from flask import render_template, request, jsonify, current_app, redirect, url_for
+from flask import render_template, request, jsonify, current_app, redirect, url_for, flash
+from flask_login import current_user, login_required
 from blueprints.username_search import username_search_bp
 from blueprints.username_search.utils import search_username
 from datetime import datetime
 import json
+from models import db, Scan
 
 @username_search_bp.route('/')
 def index():
@@ -68,8 +70,8 @@ def search():
         else:
             risk_score = 100
         
-        # Create results
-        results = {
+        # Create results object
+        scan_results = {
             'username': username,
             'scan_date': datetime.now(),
             'sherlock': sherlock_results,
@@ -80,10 +82,54 @@ def search():
             'risk_score': risk_score
         }
         
+        # Save results to database if user is logged in
+        if current_user.is_authenticated:
+            # Convert the results to JSON for storage
+            results_json = json.dumps(scan_results, default=str)
+            
+            # Create a new scan record
+            new_scan = Scan(
+                user_id=current_user.id,
+                scan_type='username',
+                target=username,
+                scan_date=datetime.now(),
+                status='completed',
+                findings=total_found,
+                results_json=results_json,
+                risk_score=risk_score
+            )
+            
+            db.session.add(new_scan)
+            db.session.commit()
+        
         # Display results
-        return render_template('username_search/results.html', results=results, now=datetime.now())
+        return render_template('username_search/results.html', results=scan_results, now=datetime.now())
         
     except Exception as e:
         print(f"Error in search: {e}")
         # On error, redirect back to search form
         return redirect(url_for('username_search.index'))
+
+@username_search_bp.route('/show_saved_results/<int:scan_id>')
+@login_required
+def show_saved_results(scan_id):
+    # Get the saved scan from database
+    scan = Scan.query.filter_by(id=scan_id, user_id=current_user.id).first_or_404()
+    
+    if scan.scan_type != 'username':
+        flash('Invalid scan type', 'error')
+        return redirect(url_for('home.my_scans'))
+    
+    try:
+        # Deserialize the JSON results
+        results = json.loads(scan.results_json)
+        
+        # Convert date strings back to datetime objects if needed
+        if isinstance(results.get('scan_date'), str):
+            results['scan_date'] = datetime.fromisoformat(results['scan_date'].replace('Z', '+00:00'))
+        
+        return render_template('username_search/results.html', results=results, now=datetime.now(), scan_id=scan.id)
+    except Exception as e:
+        print(f"Error displaying saved results: {e}")
+        flash('Error loading saved scan results', 'error')
+        return redirect(url_for('home.my_scans'))

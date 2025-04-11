@@ -36,22 +36,40 @@
                         <a href="{{ url_for('data_breach.index') }}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white">Data Breach</a>
                         <a href="{{ url_for('username_search.index') }}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white">Username Search</a>
                         <a href="{{ url_for('ai_analysis.index') }}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white">AI Analysis</a>
-                        
-                        <!-- Add links to new modules if implemented -->
-                        {% if 'phone_lookup_bp' in config.get('REGISTERED_BLUEPRINTS', []) %}
-                        <a href="{{ url_for('phone_lookup.index') }}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white">Phone Lookup</a>
-                        {% endif %}
-                        
-                        {% if 'domain_intel_bp' in config.get('REGISTERED_BLUEPRINTS', []) %}
-                        <a href="{{ url_for('domain_intel.index') }}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white">Domain Intel</a>
-                        {% endif %}
-                        
-                        {% if 'social_monitor_bp' in config.get('REGISTERED_BLUEPRINTS', []) %}
-                        <a href="{{ url_for('social_monitor.index') }}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white">Social Monitor</a>
-                        {% endif %}
                     </div>
                 </div>
                 <div class="flex items-center">
+                    <!-- User Authentication Links -->
+                    {% if current_user.is_authenticated %}
+                    <div class="relative group">
+                        <button class="flex items-center text-sm text-gray-300 hover:text-white">
+                            <i class="fas fa-user-circle mr-1"></i> {{ current_user.username }}
+                            <i class="fas fa-chevron-down ml-1 text-xs"></i>
+                        </button>
+                        <div class="absolute right-0 mt-2 w-48 bg-gray-800 rounded-md shadow-lg py-1 border border-gray-700 hidden group-hover:block z-10">
+                            <a href="{{ url_for('auth.profile') }}" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700">
+                                <i class="fas fa-user mr-2"></i> Profile
+                            </a>
+                            <a href="{{ url_for('home.my_scans') }}" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700">
+                                <i class="fas fa-history mr-2"></i> My Scans
+                            </a>
+                            <div class="border-t border-gray-700 my-1"></div>
+                            <a href="{{ url_for('auth.logout') }}" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700">
+                                <i class="fas fa-sign-out-alt mr-2"></i> Logout
+                            </a>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="hidden md:flex md:items-center md:space-x-4 mr-4">
+                        <a href="{{ url_for('auth.login') }}" class="text-sm text-gray-300 hover:text-white">
+                            <i class="fas fa-sign-in-alt mr-1"></i> Login
+                        </a>
+                        <a href="{{ url_for('auth.register') }}" class="text-sm text-gray-300 hover:text-white">
+                            <i class="fas fa-user-plus mr-1"></i> Register
+                        </a>
+                    </div>
+                    {% endif %}
+                    
                     <button class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md transition duration-300 ease-in-out transform hover:-translate-y-1">
                         <i class="fas fa-search mr-2"></i>New Scan
                     </button>
@@ -67,17 +85,21 @@
                 <a href="{{ url_for('username_search.index') }}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white">Username Search</a>
                 <a href="{{ url_for('ai_analysis.index') }}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white">AI Analysis</a>
                 
-                <!-- Add mobile links to new modules if implemented -->
-                {% if 'phone_lookup_bp' in config.get('REGISTERED_BLUEPRINTS', []) %}
-                <a href="{{ url_for('phone_lookup.index') }}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white">Phone Lookup</a>
-                {% endif %}
-                
-                {% if 'domain_intel_bp' in config.get('REGISTERED_BLUEPRINTS', []) %}
-                <a href="{{ url_for('domain_intel.index') }}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white">Domain Intel</a>
-                {% endif %}
-                
-                {% if 'social_monitor_bp' in config.get('REGISTERED_BLUEPRINTS', []) %}
-                <a href="{{ url_for('social_monitor.index') }}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white">Social Monitor</a>
+                <!-- Auth links for mobile -->
+                {% if current_user.is_authenticated %}
+                    <span class="block px-3 py-2 text-base font-medium text-gray-300">
+                        <i class="fas fa-user-circle mr-1"></i> {{ current_user.username }}
+                    </span>
+                    <a href="{{ url_for('auth.logout') }}" class="block px-3 py-2 text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white">
+                        <i class="fas fa-sign-out-alt mr-1"></i> Logout
+                    </a>
+                {% else %}
+                    <a href="{{ url_for('auth.login') }}" class="block px-3 py-2 text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white">
+                        <i class="fas fa-sign-in-alt mr-1"></i> Login
+                    </a>
+                    <a href="{{ url_for('auth.register') }}" class="block px-3 py-2 text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white">
+                        <i class="fas fa-user-plus mr-1"></i> Register
+                    </a>
                 {% endif %}
             </div>
         </div>
@@ -86,6 +108,17 @@
     <!-- Main Content -->
     <main class="flex-grow">
         <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="mb-4 p-4 rounded-md {% if category == 'error' %}bg-red-900 text-red-200{% else %}bg-green-900 text-green-200{% endif %}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
             {% block content %}{% endblock %}
         </div>
     </main>

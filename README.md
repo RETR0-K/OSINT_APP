@@ -6,6 +6,12 @@ OSINT Tracker is a web-based tool for discovering and analyzing digital footprin
 
 ## Features
 
+### User Management
+- User registration and authentication system
+- Personal dashboard with scan history and statistics
+- Profile management with settings and preferences
+- Export functionality for scan results
+
 ### Username Search
 - Discover accounts associated with usernames across multiple platforms
 - Searches through hundreds of websites using Sherlock and WhatsMyName tools
@@ -31,6 +37,8 @@ OSINT Tracker is a web-based tool for discovering and analyzing digital footprin
 
 - **Backend**: Python with Flask framework
 - **Frontend**: HTML, CSS with Tailwind CSS framework
+- **Database**: SQLAlchemy with SQLite (can be configured for MySQL/PostgreSQL)
+- **Authentication**: Flask-Login
 - **Dependencies**: Sherlock, WhatsMyName, OpenAI API
 - **APIs**: Various breach database APIs via RapidAPI
 
@@ -66,16 +74,34 @@ OSINT Tracker is a web-based tool for discovering and analyzing digital footprin
    SECRET_KEY=your_secret_key
    RAPIDAPI_KEY=your_rapidapi_key
    OPENAI_API_KEY=your_openai_api_key
+   DATABASE_URL=sqlite:///osint_tracker.db
    ```
 
-5. Run the application:
+5. Initialize the database:
+   ```
+   python setup.py
+   ```
+
+6. Run the application:
    ```
    python app.py
    ```
 
-6. Access the application in your browser at `http://localhost:5000`
+7. Access the application in your browser at `http://localhost:5000`
+
+8. Log in with the default admin account:
+   - Username: admin
+   - Password: admin123
+   (Remember to change this password after first login!)
 
 ## Usage Guide
+
+### User Management
+
+1. Register a new account or log in with existing credentials
+2. View your personal dashboard with scan statistics
+3. Manage your profile and account settings
+4. View your scan history and export results
 
 ### Username Search
 
@@ -101,23 +127,57 @@ OSINT Tracker is a web-based tool for discovering and analyzing digital footprin
 4. Review AI-generated insights and risk assessment
 5. Implement security recommendations
 
+## Scheduled Tasks
+
+The application includes scheduled tasks for maintenance:
+
+1. **Clean Old Scans**: Remove scan data older than the specified period
+   ```
+   python tasks.py clean_old_scans 30
+   ```
+
+2. **Send Inactive User Reminders**: Notify users who haven't logged in for a while
+   ```
+   python tasks.py send_inactive_user_reminders 60
+   ```
+
+3. **Generate User Reports**: Create monthly security reports for users
+   ```
+   python tasks.py generate_user_reports
+   ```
+
+Set up a cron job to run these tasks regularly.
+
 ## Development
 
 ### Project Structure
 
 ```
-osint-tracker/
-├── app.py                     # Application entry point
-├── config.py                  # Configuration settings
-├── blueprints/                # Flask blueprints for features
-│   ├── home/                  # Homepage and dashboard 
-│   ├── username_search/       # Username search module
-│   ├── data_breach/           # Data breach check module
-│   └── ai_analysis/           # AI analysis module
-├── static/                    # Static assets
-│   ├── css/                   # CSS stylesheets
-│   └── js/                    # JavaScript files
-└── templates/                 # HTML templates
+osint_tracker/
+├── app.py                           # Application entry point
+├── config.py                        # Configuration settings
+├── models.py                        # Database models
+├── requirements.txt                 # Project dependencies
+├── setup.py                         # Database initialization script
+├── tasks.py                         # Scheduled tasks
+├── .env                             # Environment variables (not in repo)
+├── .gitignore                       # Git ignore file
+│
+├── static/                          # Static files
+│   ├── css/                         # CSS stylesheets
+│   ├── js/                          # JavaScript files
+│   └── images/                      # Image assets
+│
+├── templates/                       # Global templates
+│   ├── base.html                    # Base template with common layout
+│   └── error.html                   # Error page template
+│
+└── blueprints/                      # Flask blueprints (modules)
+    ├── home/                        # Home/Dashboard module
+    ├── auth/                        # Authentication module
+    ├── username_search/             # Username search module
+    ├── data_breach/                 # Data breach module
+    └── ai_analysis/                 # AI analysis module
 ```
 
 ### Adding New Features
@@ -131,8 +191,10 @@ osint-tracker/
 
 - This tool should be used ethically and responsibly
 - Always obtain proper authorization before performing OSINT on others
-- The tool doesn't store search results or user data by default
+- User passwords are securely hashed using Werkzeug's security functions
 - API keys are stored securely in environment variables
+- The application includes session management and user authentication
+- Scans older than 30 days are automatically deleted by default
 
 ## License
 
@@ -145,6 +207,7 @@ osint-tracker/
 - [Tailwind CSS](https://tailwindcss.com/)
 - OpenAI for AI analysis features
 - RapidAPI for breach database access
+- Flask and SQLAlchemy communities
 
 ## Contributing
 

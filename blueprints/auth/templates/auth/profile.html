@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+
+{% block title %}OSINT Tracker - User Profile{% endblock %}
+
+{% block content %}
+<div class="animate__animated animate__fadeIn">
+    <!-- Header Section -->
+    <div class="bg-gray-800 rounded-lg shadow-lg overflow-hidden mb-8 border border-gray-700">
+        <div class="px-6 py-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-2xl font-bold text-white">User Profile</h1>
+                    <p class="text-gray-300 mt-1">
+                        Manage your account settings and preferences
+                    </p>
+                </div>
+                <div>
+                    <a href="{{ url_for('auth.edit_profile') }}" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md transition duration-300 ease-in-out">
+                        <i class="fas fa-edit mr-2"></i>Edit Profile
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Profile Information -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <!-- User Information -->
+        <div class="md:col-span-1 bg-gray-800 rounded-lg shadow-lg overflow-hidden border border-gray-700">
+            <div class="px-6 py-5 border-b border-gray-700">
+                <h3 class="text-lg font-medium text-white">Account Information</h3>
+            </div>
+            <div class="px-6 py-6">
+                <div class="flex justify-center mb-6">
+                    <div class="bg-blue-900 rounded-full p-6 text-blue-300 text-3xl">
+                        <i class="fas fa-user"></i>
+                    </div>
+                </div>
+                <div class="space-y-4">
+                    <div>
+                        <p class="text-gray-400 text-sm">Username</p>
+                        <p class="text-white font-medium">{{ user.username }}</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-400 text-sm">Email</p>
+                        <p class="text-white font-medium">{{ user.email }}</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-400 text-sm">Member Since</p>
+                        <p class="text-white font-medium">{{ user.created_at.strftime('%B %d, %Y') }}</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-400 text-sm">Last Login</p>
+                        <p class="text-white font-medium">{{ user.last_login.strftime('%B %d, %Y at %H:%M') if user.last_login else 'Never' }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Stats and Analytics -->
+        <div class="md:col-span-2 bg-gray-800 rounded-lg shadow-lg overflow-hidden border border-gray-700">
+            <div class="px-6 py-5 border-b border-gray-700">
+                <h3 class="text-lg font-medium text-white">Activity Summary</h3>
+            </div>
+            <div class="px-6 py-6">
+                <!-- Scan Stats -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div class="bg-gray-750 p-4 rounded-lg border border-gray-700">
+                        <div class="text-center">
+                            <p class="text-gray-400 text-sm">Total Scans</p>
+                            <p class="text-white text-2xl font-bold">{{ user.scans.count() }}</p>
+                        </div>
+                    </div>
+                    <div class="bg-gray-750 p-4 rounded-lg border border-gray-700">
+                        <div class="text-center">
+                            <p class="text-gray-400 text-sm">This Month</p>
+                            <p class="text-white text-2xl font-bold">
+                                {% set this_month = user.scans.filter(Scan.scan_date >= now.replace(day=1)).count() %}
+                                {{ this_month }}
+                            </p>
+                        </div>
+                    </div>
+                    <div class="bg-gray-750 p-4 rounded-lg border border-gray-700">
+                        <div class="text-center">
+                            <p class="text-gray-400 text-sm">Average Risk Score</p>
+                            {% set all_scans = user.scans.all() %}
+                            {% if all_scans %}
+                                <p class="text-white text-2xl font-bold">
+                                    {{ (all_scans|sum(attribute='risk_score') / all_scans|length)|round|int }}/100
+                                </p>
+                            {% else %}
+                                <p class="text-white text-2xl font-bold">0/100</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Scan Type Distribution -->
+                <h4 class="text-white font-medium mb-3">Scan Type Distribution</h4>
+                <div class="space-y-3 mb-6">
+                    {% set username_scans = user.scans.filter_by(scan_type='username').count() %}
+                    {% set email_scans = user.scans.filter_by(scan_type='email').count() %}
+                    {% set ai_scans = user.scans.filter_by(scan_type='ai_analysis').count() %}
+                    {% set total_scans = user.scans.count() %}
+                    
+                    <div>
+                        <div class="flex justify-between mb-1">
+                            <span class="text-sm text-gray-300">Username Searches</span>
+                            <span class="text-sm text-gray-400">{{ username_scans }}</span>
+                        </div>
+                        <div class="w-full bg-gray-700 rounded-full h-2">
+                            <div class="h-2 rounded-full bg-purple-500" 
+                                 style="width: {{ (username_scans / total_scans * 100) if total_scans > 0 else 0 }}%"></div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <div class="flex justify-between mb-1">
+                            <span class="text-sm text-gray-300">Data Breach Checks</span>
+                            <span class="text-sm text-gray-400">{{ email_scans }}</span>
+                        </div>
+                        <div class="w-full bg-gray-700 rounded-full h-2">
+                            <div class="h-2 rounded-full bg-red-500" 
+                                 style="width: {{ (email_scans / total_scans * 100) if total_scans > 0 else 0 }}%"></div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <div class="flex justify-between mb-1">
+                            <span class="text-sm text-gray-300">AI Analysis</span>
+                            <span class="text-sm text-gray-400">{{ ai_scans }}</span>
+                        </div>
+                        <div class="w-full bg-gray-700 rounded-full h-2">
+                            <div class="h-2 rounded-full bg-green-500" 
+                                 style="width: {{ (ai_scans / total_scans * 100) if total_scans > 0 else 0 }}%"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Most Recent Activity -->
+                <h4 class="text-white font-medium mb-3">Recent Activity</h4>
+                <div class="bg-gray-750 rounded-lg border border-gray-700 overflow-hidden">
+                    <table class="min-w-full divide-y divide-gray-700">
+                        <thead class="bg-gray-700">
+                            <tr>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Target</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Type</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Date</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Findings</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-700">
+                            {% for scan in user.scans.order_by(Scan.scan_date.desc()).limit(5).all() %}
+                            <tr>
+                                <td class="px-4 py-2 whitespace-nowrap text-sm text-white">{{ scan.target }}</td>
+                                <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-300">
+                                    {% if scan.scan_type == 'username' %}
+                                        Username Search
+                                    {% elif scan.scan_type == 'email' %}
+                                        Data Breach
+                                    {% elif scan.scan_type == 'ai_analysis' %}
+                                        AI Analysis
+                                    {% else %}
+                                        {{ scan.scan_type|capitalize }}
+                                    {% endif %}
+                                </td>
+                                <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-300">{{ scan.scan_date.strftime('%b %d, %Y') }}</td>
+                                <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-300">{{ scan.findings }} items</td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="4" class="px-4 py-2 text-center text-gray-400">No scans yet</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Account Settings -->
+    <div class="bg-gray-800 rounded-lg shadow-lg overflow-hidden mb-8 border border-gray-700">
+        <div class="px-6 py-5 border-b border-gray-700">
+            <h3 class="text-lg font-medium text-white">Account Settings</h3>
+        </div>
+        <div class="px-6 py-6">
+            <div class="space-y-6">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between pb-4 border-b border-gray-700">
+                    <div>
+                        <h4 class="text-white font-medium">Email Notifications</h4>
+                        <p class="text-gray-400 text-sm mt-1">Receive email notifications for new security alerts</p>
+                    </div>
+                    <div class="mt-2 md:mt-0">
+                        <label class="inline-flex items-center cursor-pointer">
+                            <input type="checkbox" value="" class="sr-only peer" checked>
+                            <div class="relative w-11 h-6 bg-gray-600 rounded-full peer peer-checked:bg-blue-600 peer-focus:ring-4 peer-focus:ring-blue-800">
+                                <div class="absolute top-0.5 left-0.5 bg-white w-5 h-5 rounded-full transition-all peer-checked:translate-x-5"></div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between pb-4 border-b border-gray-700">
+                    <div>
+                        <h4 class="text-white font-medium">Two-Factor Authentication</h4>
+                        <p class="text-gray-400 text-sm mt-1">Add an extra layer of security to your account</p>
+                    </div>
+                    <div class="mt-2 md:mt-0">
+                        <button class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-md transition duration-300 ease-in-out">
+                            Enable
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+                    <div>
+                        <h4 class="text-white font-medium">Delete Account</h4>
+                        <p class="text-gray-400 text-sm mt-1">Permanently delete your account and all data</p>
+                    </div>
+                    <div class="mt-2 md:mt-0">
+                        <button class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-md transition duration-300 ease-in-out"
+                                onclick="return confirm('Are you sure you want to delete your account? This action cannot be undone.')">
+                            Delete Account
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Action Buttons -->
+    <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 mb-8">
+        <a href="{{ url_for('home.index') }}" class="flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 md:text-lg transition duration-300 ease-in-out">
+            <i class="fas fa-home mr-2"></i> Back to Dashboard
+        </a>
+        <a href="{{ url_for('home.my_scans') }}" class="flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 md:text-lg transition duration-300 ease-in-out">
+            <i class="fas fa-history mr-2"></i> View Scan History
+        </a>
+    </div>
+</div>
+{% endblock %}

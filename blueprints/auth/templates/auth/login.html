@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block title %}OSINT Tracker - Login{% endblock %}
+
+{% block content %}
+<div class="animate__animated animate__fadeIn">
+    <!-- Header Section -->
+    <div class="bg-gray-800 rounded-lg shadow-lg overflow-hidden mb-8 border border-gray-700">
+        <div class="px-6 py-8">
+            <h1 class="text-3xl font-bold text-white mb-2">Login to OSINT Tracker</h1>
+            <p class="text-gray-300 mb-6">
+                Sign in to your account to access your saved scans and personalized dashboard.
+            </p>
+        </div>
+    </div>
+    
+    <!-- Login Form -->
+    <div class="bg-gray-800 rounded-lg shadow-lg overflow-hidden mb-8 border border-gray-700">
+        <div class="px-6 py-6">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="mb-4 p-4 rounded-md {% if category == 'error' %}bg-red-900 text-red-200{% else %}bg-green-900 text-green-200{% endif %}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <form action="{{ url_for('auth.login') }}" method="post" class="w-full md:max-w-md mx-auto">
+                <div class="space-y-6">
+                    <div>
+                        <label for="username" class="block text-sm font-medium text-gray-300 mb-2">
+                            Username
+                        </label>
+                        <input type="text" name="username" id="username" required
+                            class="w-full px-4 py-3 border border-gray-600 bg-gray-700 rounded-md text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            placeholder="Enter your username">
+                    </div>
+                    
+                    <div>
+                        <label for="password" class="block text-sm font-medium text-gray-300 mb-2">
+                            Password
+                        </label>
+                        <input type="password" name="password" id="password" required
+                            class="w-full px-4 py-3 border border-gray-600 bg-gray-700 rounded-md text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            placeholder="Enter your password">
+                    </div>
+                    
+                    <div class="flex items-center">
+                        <input type="checkbox" name="remember_me" id="remember_me" value="true" 
+                            class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-500 rounded bg-gray-700">
+                        <label for="remember_me" class="ml-2 block text-sm text-gray-300">
+                            Remember me
+                        </label>
+                    </div>
+                    
+                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-md transition duration-300 ease-in-out">
+                        <i class="fas fa-sign-in-alt mr-2"></i> Login
+                    </button>
+                </div>
+            </form>
+            
+            <div class="mt-6 text-center">
+                <p class="text-gray-400">
+                    Don't have an account? 
+                    <a href="{{ url_for('auth.register') }}" class="text-blue-400 hover:text-blue-300">Register here</a>
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Features Available After Login -->
+    <div class="bg-gray-800 rounded-lg shadow-lg overflow-hidden mb-8 border border-gray-700">
+        <div class="px-6 py-5 border-b border-gray-700">
+            <h3 class="text-lg font-medium text-white">Account Benefits</h3>
+        </div>
+        <div class="px-6 py-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-gray-750 p-4 rounded-lg border border-gray-700">
+                    <div class="text-center mb-4">
+                        <div class="bg-blue-800 p-3 rounded-full inline-block">
+                            <i class="fas fa-history text-blue-300 text-xl"></i>
+                        </div>
+                        <h4 class="text-white font-medium mt-2">Scan History</h4>
+                    </div>
+                    <p class="text-gray-400 text-center">
+                        Save and access all your previous scans for quick reference and comparison.
+                    </p>
+                </div>
+                
+                <div class="bg-gray-750 p-4 rounded-lg border border-gray-700">
+                    <div class="text-center mb-4">
+                        <div class="bg-purple-800 p-3 rounded-full inline-block">
+                            <i class="fas fa-bell text-purple-300 text-xl"></i>
+                        </div>
+                        <h4 class="text-white font-medium mt-2">Saved Reports</h4>
+                    </div>
+                    <p class="text-gray-400 text-center">
+                        Save detailed reports of your findings for future reference and analysis.
+                    </p>
+                </div>
+                
+                <div class="bg-gray-750 p-4 rounded-lg border border-gray-700">
+                    <div class="text-center mb-4">
+                        <div class="bg-green-800 p-3 rounded-full inline-block">
+                            <i class="fas fa-chart-line text-green-300 text-xl"></i>
+                        </div>
+                        <h4 class="text-white font-medium mt-2">Dashboard Insights</h4>
+                    </div>
+                    <p class="text-gray-400 text-center">
+                        View trends and statistics from your scanning history with personalized insights.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
