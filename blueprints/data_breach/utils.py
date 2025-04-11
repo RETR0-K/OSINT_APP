@@ -1,193 +1,162 @@
 # blueprints/data_breach/utils.py
 import requests
 import json
-import hashlib
 import time
+from datetime import datetime
+import os
 
-def check_breach_directory(email, api_key):
+def check_xposedornot(email):
     """
-    Check if an email has been compromised using the BreachDirectory API via RapidAPI
-    """
-    if not api_key:
-        # Return example data for development without API key
-        return [
-            {
-                'source': 'Adobe',
-                'password': '******ed2',
-                'last_breach': '2013-10-04'
-            }
-        ]
+    Check if an email has been compromised using the XposedOrNot API.
     
-    url = "https://breachdirectory.p.rapidapi.com/"
-    querystring = {"func": "auto", "term": email}
-    headers = {
-        'x-rapidapi-key': api_key,
-        'x-rapidapi-host': "breachdirectory.p.rapidapi.com"
-    }
+    This function implements two API calls from XposedOrNot:
+    1. Simple check to see if email is in any breaches
+    2. Detailed breach analytics if a breach is found
     
-    try:
-        response = requests.get(url, headers=headers, params=querystring)
-        if response.status_code == 200:
-            data = response.json()
-            # Format the response to match our expected structure
-            breaches = []
-            for result in data.get('result', []):
-                breaches.append({
-                    'source': result.get('sources', ['Unknown'])[0],
-                    'password': result.get('password', '********'),
-                    'last_breach': result.get('last_breach', 'Unknown'),
-                    'hash': result.get('hash', ''),
-                    'sha1': result.get('sha1', ''),
-                    'hash_password': result.get('hash_password', False)
-                })
-            return breaches
-        elif response.status_code == 429:
-            # Rate limited, wait and try again
-            print("Rate limited by BreachDirectory API. Waiting 2 seconds...")
-            time.sleep(2)
-            return check_breach_directory(email, api_key)
-        else:
-            print(f"Error checking BreachDirectory: {response.status_code}")
-            return None
-    except Exception as e:
-        print(f"Exception checking BreachDirectory: {e}")
-        return None
-
-def check_breach_search(email, api_key):
+    Based on XposedOrNot API documentation: https://xposedornot.com/api_doc
     """
-    Check if an email has been compromised using the BreachSearch API via RapidAPI
-    """
-    if not api_key:
-        # Return example data for development without API key
-        return [
-            {
-                'database_name': {
-                    'info_leak': 'Description of the leak',
-                    'data': [
-                        {
-                            'email': email,
-                            'first_name': 'John',
-                            'last_name': 'Doe'
-                        }
-                    ]
-                }
-            }
-        ]
-    
-    url = f"https://breachsearch.p.rapidapi.com/dafney47@gmail.com"
-    url = url.replace('dafney47@gmail.com', email)  # Replace with the actual email
-    
-    headers = {
-        'x-rapidapi-key': api_key,
-        'x-rapidapi-host': "breachsearch.p.rapidapi.com"
-    }
-    
-    try:
-        response = requests.get(url, headers=headers)
-        if response.status_code == 200:
-            data = response.json()
-            # Format the response to match our expected structure
-            breaches = []
-            
-            # Process the results based on the structure shown in the screenshots
-            database_list = data.get('List', [])
-            for database in database_list:
-                for db_name, db_info in database.items():
-                    if db_name == 'DatabaseName':
-                        info_leak = db_info.get('InfoLeak', 'Unknown breach')
-                        breach_data = db_info.get('Data', [])
-                        
-                        for record in breach_data:
-                            breaches.append({
-                                'source': db_name,
-                                'description': info_leak,
-                                'email': record.get('Email', email),
-                                'first_name': record.get('FirstName', ''),
-                                'last_name': record.get('LastName', '')
-                            })
-            
-            return breaches
-        elif response.status_code == 429:
-            # Rate limited, wait and try again
-            print("Rate limited by BreachSearch API. Waiting 2 seconds...")
-            time.sleep(2)
-            return check_breach_search(email, api_key)
-        else:
-            print(f"Error checking BreachSearch: {response.status_code}")
-            return None
-    except Exception as e:
-        print(f"Exception checking BreachSearch: {e}")
-        return None
-
-def check_osint_search(email, api_key):
-    """
-    Check if an email has been compromised using the OSINT Search API via RapidAPI
-    """
-    if not api_key:
-        # Return example data for development without API key
+    # For demo/development, return mock data if running in development mode with mock data enabled
+    if os.environ.get('FLASK_ENV') == 'development' and os.environ.get('USE_MOCK_DATA') == 'True':
+        # Mock data based on XposedOrNot API response format
         return {
-            'success': True,
-            'found': 2,
-            'result': [
+            'found': True,
+            'total_breaches': 3,
+            'breaches': [
                 {
-                    'email': email,
-                    'hash_password': True,
-                    'password': '********',
-                    'sha1': '44fc217f321150e797486c6838d2579ae4af31e',
-                    'hash': 'd5K83+4xxgBwNbWH2Yfb3FZK35GXM/gocuT8r9gPFCQN/V',
-                    'sources': ['Unknown']
+                    'source': 'SweClockers',
+                    'breach_date': '2015-01-01',
+                    'description': 'SweClockers experienced a data breach in early 2015, where 255k accounts were exposed. Usernames, email addresses, and salted hashes of passwords were disclosed.',
+                    'exposed_data': 'Usernames, Email addresses, Passwords',
+                    'risk_level': 'Low',
+                    'breach_size': '254,967 records'
+                },
+                {
+                    'source': 'LinkedIn',
+                    'breach_date': '2012-05-05',
+                    'description': 'LinkedIn suffered a breach exposing 164 million email addresses and passwords. The passwords were stored as SHA1 hashes without salt.',
+                    'exposed_data': 'Email addresses, Passwords, Professional information',
+                    'risk_level': 'High',
+                    'breach_size': '164,611,595 records'
+                },
+                {
+                    'source': 'Adobe',
+                    'breach_date': '2013-10-04',
+                    'description': 'Adobe experienced a security breach exposing account information of 153 million users. The breach included email addresses, encrypted passwords, and password hints.',
+                    'exposed_data': 'Email addresses, Passwords, Password hints, Countries',
+                    'risk_level': 'High',
+                    'breach_size': '152,445,165 records'
                 }
             ]
         }
     
-    url = "https://osint-phone-email-names-search-everything.p.rapidapi.com/search"
-    
-    payload = {
-        "request": email,
-        "lang": "en"
-    }
-    
-    headers = {
-        'x-rapidapi-key': api_key,
-        'x-rapidapi-host': "osint-phone-email-names-search-everything.p.rapidapi.com",
-        'Content-Type': 'application/json'
-    }
+    # Step 1: Simple breach check
+    # Use the "Check for Email Address Data Breaches" API endpoint
+    email_check_url = f"https://api.xposedornot.com/v1/check-email/{email}"
     
     try:
-        response = requests.post(url, json=payload, headers=headers)
-        if response.status_code == 200:
-            data = response.json()
-            # Format the response to match our expected structure
+        # Make the first API call
+        response = requests.get(email_check_url)
+        
+        # Check for rate limiting
+        if response.status_code == 429:
+            print("Rate limited by XposedOrNot API. Waiting 2 seconds...")
+            time.sleep(2)
+            return check_xposedornot(email)
+        
+        # If response is not successful, return not found
+        if response.status_code != 200:
+            print(f"Error checking XposedOrNot (status code {response.status_code}): {response.text}")
+            return {'found': False, 'total_breaches': 0, 'breaches': []}
+        
+        # Parse the response
+        breach_check_data = response.json()
+        
+        # Check if email was found in any breaches
+        if "Error" in breach_check_data and breach_check_data["Error"] == "Not found":
+            return {'found': False, 'total_breaches': 0, 'breaches': []}
+        
+        # If we get here, breaches were found. Get the list of breach names
+        breach_names = []
+        if "breaches" in breach_check_data and len(breach_check_data["breaches"]) > 0:
+            breach_names = breach_check_data["breaches"][0]
+        
+        # Step 2: Get detailed breach analytics
+        # Use the "Data Breach Analytics for Email Addresses" API endpoint
+        analytics_url = f"https://api.xposedornot.com/v1/breach-analytics?email={email}"
+        
+        analytics_response = requests.get(analytics_url)
+        
+        # Check for rate limiting
+        if analytics_response.status_code == 429:
+            print("Rate limited by XposedOrNot API. Waiting 2 seconds...")
+            time.sleep(2)
+            # Try just the analytics part again
+            analytics_response = requests.get(analytics_url)
+        
+        # If analytics response is successful, parse the detailed breach data
+        if analytics_response.status_code == 200:
+            analytics_data = analytics_response.json()
+            
+            # Format the detailed breach information
             breaches = []
             
-            # Process each result item
-            for result_item in data.get('result', []):
-                # Only include records where the email matches
-                if 'email' in result_item and result_item['email'] == email:
-                    source = 'Unknown'
-                    if 'sources' in result_item and len(result_item['sources']) > 0:
-                        source = result_item['sources'][0]
-                    
+            # Check if there are exposed breaches in the analytics data
+            if "ExposedBreaches" in analytics_data and analytics_data["ExposedBreaches"]:
+                exposed_breaches = analytics_data["ExposedBreaches"].get("breaches_details", [])
+                
+                for breach in exposed_breaches:
                     breaches.append({
-                        'source': source,
-                        'password': result_item.get('password', '********'),
-                        'hash': result_item.get('hash', ''),
-                        'sha1': result_item.get('sha1', ''),
-                        'hash_password': result_item.get('hash_password', False)
+                        'source': breach.get('breach', 'Unknown'),
+                        'breach_date': breach.get('xposed_date', 'Unknown'),
+                        'description': breach.get('details', 'No details available'),
+                        'exposed_data': breach.get('xposed_data', 'Unknown').replace(';', ', '),
+                        'risk_level': _get_risk_level(breach.get('password_risk', 'unknown')),
+                        'breach_size': f"{breach.get('xposed_records', 0):,} records"
                     })
             
+            # Calculate risk score from metrics if available
+            risk_score = 0
+            if "BreachMetrics" in analytics_data:
+                metrics = analytics_data["BreachMetrics"]
+                if "risk" in metrics and len(metrics["risk"]) > 0:
+                    risk_data = metrics["risk"][0]
+                    risk_score = risk_data.get("risk_score", 0)
+            
             return {
-                'found': data.get('found', 0),
+                'found': True,
+                'total_breaches': len(breaches),
+                'breaches': breaches,
+                'risk_score': risk_score
+            }
+        else:
+            # Fallback to basic breach information if analytics fails
+            breaches = []
+            for breach_name in breach_names:
+                breaches.append({
+                    'source': breach_name,
+                    'breach_date': 'Unknown',
+                    'description': 'Details not available',
+                    'exposed_data': 'Unknown',
+                    'risk_level': 'Unknown',
+                    'breach_size': 'Unknown'
+                })
+            
+            return {
+                'found': True,
+                'total_breaches': len(breach_names),
                 'breaches': breaches
             }
-        elif response.status_code == 429:
-            # Rate limited, wait and try again
-            print("Rate limited by OSINT Search API. Waiting 2 seconds...")
-            time.sleep(2)
-            return check_osint_search(email, api_key)
-        else:
-            print(f"Error checking OSINT Search: {response.status_code}")
-            return None
+        
     except Exception as e:
-        print(f"Exception checking OSINT Search: {e}")
+        print(f"Exception checking XposedOrNot: {e}")
         return None
+
+def _get_risk_level(password_risk):
+    """Convert password_risk from XposedOrNot to risk level"""
+    risk_map = {
+        'plaintext': 'Critical',
+        'easytocrack': 'High',
+        'hardtocrack': 'Low',
+        'unknown': 'Unknown'
+    }
+    return risk_map.get(password_risk.lower(), 'Unknown')
