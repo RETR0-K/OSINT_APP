@@ -1,10 +1,12 @@
 # blueprints/username_search/routes.py
-from flask import render_template, request, jsonify, current_app, redirect, url_for, flash
+from flask import render_template, request, jsonify, redirect, url_for, flash, session
 from flask_login import current_user, login_required
 from blueprints.username_search import username_search_bp
-from blueprints.username_search.utils import search_username
+from blueprints.username_search.utils import search_username, get_search_progress
 from datetime import datetime
 import json
+import os
+import traceback
 from models import db, Scan
 
 @username_search_bp.route('/')
@@ -14,41 +16,52 @@ def index():
 @username_search_bp.route('/search', methods=['POST'])
 def search():
     """
-    Process the username search and show results directly
+    Start the username search process and show the searching page
     """
     username = request.form.get('username', '')
     if not username:
         return redirect(url_for('username_search.index'))
     
+    # Store username in session for the progress page
+    session['search_username'] = username
+    
+    # Redirect to the searching page
+    return render_template('username_search/searching.html', username=username)
+
+@username_search_bp.route('/process_search', methods=['POST'])
+def process_search():
+    """
+    Process the username search in the background and return the results
+    """
     try:
-        # Run the search
-        search_results = search_username(username)
+        username = request.form.get('username', '')
+        if not username:
+            return jsonify({'success': False, 'error': 'Username is required'})
         
-        # Process and combine results
+        print(f"Starting search for username: {username}")
+        
+        # Start the search
+        search_result = search_username(username)
+        
+        print(f"Search completed. Processing results...")
+        
+        # Combine results for the final output
         combined_results = []
-        categories = {}
         
         # Process Sherlock results
-        sherlock_results = search_results.get('sherlock', [])
+        sherlock_results = search_result.get('sherlock', [])
         for site in sherlock_results:
-            combined_results.append({
-                'site_name': site['site_name'],
-                'url': site['url'],
-                'category': site.get('category', 'Uncategorized'),
-                'source': 'Sherlock'
-            })
+            combined_results.append(site)
         
         # Process WhatsMyName results
-        whatsmyname_results = search_results.get('whatsmyname', [])
+        whatsmyname_results = search_result.get('whatsmyname', [])
         for site in whatsmyname_results:
-            combined_results.append({
-                'site_name': site['site_name'],
-                'url': site['url'],
-                'category': site.get('category', 'Uncategorized'),
-                'source': 'WhatsMyName'
-            })
+            # Check if this site is already in results from Sherlock
+            if not any(r['site_name'] == site['site_name'] for r in combined_results):
+                combined_results.append(site)
         
         # Count categories
+        categories = {}
         for result in combined_results:
             category = result['category']
             if category not in categories:
@@ -84,30 +97,84 @@ def search():
         
         # Save results to database if user is logged in
         if current_user.is_authenticated:
-            # Convert the results to JSON for storage
-            results_json = json.dumps(scan_results, default=str)
-            
-            # Create a new scan record
-            new_scan = Scan(
-                user_id=current_user.id,
-                scan_type='username',
-                target=username,
-                scan_date=datetime.now(),
-                status='completed',
-                findings=total_found,
-                results_json=results_json,
-                risk_score=risk_score
-            )
-            
-            db.session.add(new_scan)
-            db.session.commit()
+            try:
+                # Convert the results to JSON for storage
+                results_json = json.dumps(scan_results, default=str)
+                
+                # Create a new scan record
+                new_scan = Scan(
+                    user_id=current_user.id,
+                    scan_type='username',
+                    target=username,
+                    scan_date=datetime.now(),
+                    status='completed',
+                    findings=total_found,
+                    results_json=results_json,
+                    risk_score=risk_score
+                )
+                
+                db.session.add(new_scan)
+                db.session.commit()
+            except Exception as e:
+                print(f"Error saving scan to database: {e}")
+                # Continue without saving to database
         
-        # Display results
-        return render_template('username_search/results.html', results=scan_results, now=datetime.now())
+        print(f"Returning final results with {total_found} accounts found")
         
+        # Return success response with the results
+        return jsonify({'success': True, 'results': scan_results})
+    
     except Exception as e:
-        print(f"Error in search: {e}")
-        # On error, redirect back to search form
+        print(f"Error in username search: {e}")
+        print(traceback.format_exc())
+        return jsonify({'success': False, 'error': str(e)})
+
+@username_search_bp.route('/check_progress')
+def check_progress():
+    """
+    Check the current progress of an ongoing search
+    """
+    progress_file = request.args.get('progress_file', '')
+    username = session.get('search_username', '')
+    
+    if not progress_file:
+        # Try to find the most recent progress file for this username
+        temp_dir = tempfile.gettempdir()
+        potential_files = [f for f in os.listdir(temp_dir) if f.startswith(f"search_progress_{username}_") and f.endswith(".json")]
+        if potential_files:
+            # Sort by creation time, newest first
+            potential_files.sort(key=lambda f: os.path.getctime(os.path.join(temp_dir, f)), reverse=True)
+            progress_file = os.path.join(temp_dir, potential_files[0])
+    
+    if not progress_file or not os.path.exists(progress_file):
+        # If progress file does not exist, return a default progress message
+        return jsonify({
+            'sherlock': {'status': 'starting', 'message': 'Starting search...', 'found': 0, 'total_checked': 0},
+            'whatsmyname': {'status': 'starting', 'message': 'Starting search...', 'found': 0, 'total_checked': 0}
+        })
+    
+    # Read the progress file
+    progress = get_search_progress(progress_file)
+    if progress:
+        return jsonify(progress)
+    else:
+        return jsonify({
+            'sherlock': {'status': 'error', 'message': 'Error reading progress', 'found': 0, 'total_checked': 0},
+            'whatsmyname': {'status': 'error', 'message': 'Error reading progress', 'found': 0, 'total_checked': 0}
+        })
+
+@username_search_bp.route('/show_results', methods=['POST'])
+def show_results():
+    """
+    Display the search results
+    """
+    results_json = request.form.get('results', '{}')
+    try:
+        results = json.loads(results_json)
+        return render_template('username_search/results.html', results=results, now=datetime.now())
+    except Exception as e:
+        print(f"Error displaying results: {e}")
+        flash("Error displaying search results", "error")
         return redirect(url_for('username_search.index'))
 
 @username_search_bp.route('/show_saved_results/<int:scan_id>')
