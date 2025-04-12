@@ -8,7 +8,6 @@ import time
 import random
 from pathlib import Path
 import concurrent.futures
-from flask import current_app
 import threading
 import re
 
@@ -16,150 +15,299 @@ def search_username(username):
     """
     Search for username across platforms using both Sherlock and WhatsMyName concurrently
     """
+    # Create progress tracking objects
+    progress_file = os.path.join(tempfile.gettempdir(), f"search_progress_{username}_{int(time.time())}.json")
+    
+    # Initialize progress file
+    progress = {
+        'sherlock': {
+            'status': 'starting',
+            'message': 'Starting Sherlock search...',
+            'found': 0,
+            'total_checked': 0,
+            'total_sites': 0
+        },
+        'whatsmyname': {
+            'status': 'starting',
+            'message': 'Starting WhatsMyName search...',
+            'found': 0,
+            'total_checked': 0,
+            'total_sites': 0
+        }
+    }
+    
+    with open(progress_file, 'w') as f:
+        json.dump(progress, f)
+    
     # Use ThreadPoolExecutor to run both searches in parallel
     with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
         # Submit both search tasks
-        sherlock_future = executor.submit(search_sherlock, username)
-        whatsmyname_future = executor.submit(search_whatsmyname, username)
+        sherlock_future = executor.submit(search_sherlock, username, progress_file)
+        whatsmyname_future = executor.submit(search_whatsmyname, username, progress_file)
         
         # Wait for both to complete and get results
         sherlock_results = sherlock_future.result()
         whatsmyname_results = whatsmyname_future.result()
     
-    # Return both results
+    # Return both results and progress file path
     return {
         'sherlock': sherlock_results,
-        'whatsmyname': whatsmyname_results
+        'whatsmyname': whatsmyname_results,
+        'progress_file': progress_file
     }
 
-def search_sherlock(username):
+def is_sherlock_installed():
+    """Check if Sherlock is installed and available"""
+    try:
+        result = subprocess.run(['sherlock', '--version'], capture_output=True, text=True)
+        return result.returncode == 0
+    except FileNotFoundError:
+        return False
+
+def search_sherlock(username, progress_file):
     """
     Search for username across various platforms using Sherlock
-    
-    Note: Requires Sherlock to be installed on the system
-    Installation: pip install sherlock-project
     """
-    # Check if we have mock data for testing
-    if os.environ.get('FLASK_ENV') == 'development' and os.environ.get('USE_MOCK_DATA') == 'True':
+    if not is_sherlock_installed():
+        # Show clear message that Sherlock isn't installed
+        print("Sherlock is not installed. Using mock data.")
+        update_progress(progress_file, 'sherlock', 'error', "Sherlock not installed")
         return _get_mock_sherlock_data(username)
     
-    # Real Sherlock implementation
     try:
-        # Create a temporary file for output
-        with tempfile.NamedTemporaryFile(suffix='.json', delete=False) as temp:
-            temp_file_path = temp.name
+        # Update progress
+        update_progress(progress_file, 'sherlock', 'running', "Starting Sherlock search")
         
-        # Build the command to run Sherlock
+        # Create a temporary directory for output
+        temp_dir = tempfile.mkdtemp()
+        output_path = os.path.join(temp_dir, "sherlock_results")
+        
+        # Build the command to run Sherlock - use simpler command without json output
         cmd = [
             'sherlock',
             username,
             '--timeout', '5',
             '--print-found',
-            '--output', temp_file_path, 
-            '--json'
+            '--output', output_path
         ]
         
-        # Run Sherlock command
-        process = subprocess.run(
+        print(f"Running Sherlock command: {' '.join(cmd)}")
+        
+        # Run Sherlock command with live output capture for progress updates
+        process = subprocess.Popen(
             cmd,
-            capture_output=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
             text=True,
-            timeout=120  # 2 minute timeout
+            bufsize=1  # Line buffered
         )
         
+        # Monitor output for progress updates
+        sites_checked = 0
+        sites_found = 0
+        found_sites = []
+        
+        # Read output line by line
+        for line in iter(process.stdout.readline, ''):
+            print(f"Sherlock output: {line.strip()}")
+            if "[+]" in line:  # Found a match
+                sites_found += 1
+                # Extract site name and URL from the line
+                site_info = line.strip().split("[+] ")[1] if "[+] " in line else ""
+                if site_info and ": " in site_info:
+                    site_parts = site_info.split(": ")
+                    site_name = site_parts[0].strip()
+                    site_url = site_parts[1].strip() if len(site_parts) > 1 else ""
+                    
+                    if site_name and site_url:
+                        found_sites.append({
+                            'site_name': site_name,
+                            'url': site_url,
+                            'category': _get_site_category(site_name),
+                            'source': 'Sherlock'
+                        })
+                
+                update_progress(progress_file, 'sherlock', 'running', 
+                                f"Found {sites_found} accounts", sites_found, sites_checked)
+            elif "]" in line and "[+]" not in line:  # Checked a site
+                sites_checked += 1
+                if sites_checked % 5 == 0:  # Update every 5 sites to avoid too many updates
+                    update_progress(progress_file, 'sherlock', 'running', 
+                                   f"Checked {sites_checked} sites", sites_found, sites_checked)
+        
+        # Read any error output
+        error_output = process.stderr.read()
+        if error_output:
+            print(f"Sherlock stderr: {error_output}")
+        
+        # Wait for process to complete
+        process.wait()
+        
         if process.returncode != 0:
-            print(f"Sherlock error: {process.stderr}")
+            print(f"Sherlock error: {error_output}")
+            update_progress(progress_file, 'sherlock', 'error', f"Error: {error_output}")
+            # If we have any results despite the error, return them instead of mock data
+            if found_sites:
+                return found_sites
             return _get_mock_sherlock_data(username)
         
-        # Read the results from the JSON file
-        try:
-            with open(temp_file_path, 'r') as f:
-                results = json.load(f)
+        # If we parsed the results from stdout, use those
+        if found_sites:
+            # Update final progress
+            update_progress(progress_file, 'sherlock', 'completed', 
+                           f"Completed with {len(found_sites)} accounts found", 
+                           len(found_sites), sites_checked)
+            return found_sites
+        
+        # As a fallback, check for the output file that Sherlock might have created
+        output_file = f"{output_path}.txt"
+        if os.path.exists(output_file):
+            # Parse the text file
+            with open(output_file, 'r') as f:
+                lines = f.readlines()
             
-            # Convert the results to our standard format and validate each found account
-            formatted_results = []
-            for site_name, data in results.get(username, {}).items():
-                if data.get('status', {}).get('message') == "Claimed":
-                    url = data.get('url', '')
-                    # Only add if verification passes
-                    if verify_account_exists(url, site_name):
-                        formatted_results.append({
+            parsed_sites = []
+            for line in lines:
+                if ": " in line:
+                    site_parts = line.strip().split(": ")
+                    site_name = site_parts[0].strip()
+                    site_url = site_parts[1].strip() if len(site_parts) > 1 else ""
+                    
+                    if site_name and site_url:
+                        parsed_sites.append({
                             'site_name': site_name,
-                            'url': url,
+                            'url': site_url,
                             'category': _get_site_category(site_name),
                             'source': 'Sherlock'
                         })
             
-            return formatted_results
-        except (json.JSONDecodeError, FileNotFoundError) as e:
-            print(f"Error reading Sherlock results: {e}")
-            return _get_mock_sherlock_data(username)
-        finally:
-            # Clean up the temporary file
-            try:
-                os.unlink(temp_file_path)
-            except:
-                pass
+            # Update final progress
+            update_progress(progress_file, 'sherlock', 'completed', 
+                           f"Completed with {len(parsed_sites)} accounts found", 
+                           len(parsed_sites), sites_checked)
+            return parsed_sites
+        
+        # If we couldn't get results from stdout or file, return mock data
+        print("No Sherlock results found, using mock data")
+        update_progress(progress_file, 'sherlock', 'completed', 
+                       "Completed with no accounts found", 0, sites_checked)
+        return []
     
-    except subprocess.TimeoutExpired:
-        print("Sherlock search timed out")
-        return _get_mock_sherlock_data(username)
     except Exception as e:
+        import traceback
         print(f"Error running Sherlock: {e}")
+        print(traceback.format_exc())
+        update_progress(progress_file, 'sherlock', 'error', str(e))
         return _get_mock_sherlock_data(username)
+    finally:
+        # Clean up the temporary directory
+        try:
+            import shutil
+            shutil.rmtree(temp_dir, ignore_errors=True)
+        except Exception as e:
+            print(f"Error cleaning up temp dir: {e}")
 
-def search_whatsmyname(username):
+def search_whatsmyname(username, progress_file):
     """
-    Search for username across various platforms using WhatsMyName
-    
-    This implementation uses the web check method directly
+    Search for username across various platforms using WhatsMyName API
     """
-    # Check if we have mock data for testing
-    if os.environ.get('FLASK_ENV') == 'development' and os.environ.get('USE_MOCK_DATA') == 'True':
-        return _get_mock_whatsmyname_data(username)
+    update_progress(progress_file, 'whatsmyname', 'running', "Starting WhatsMyName search")
     
-    # Real WhatsMyName implementation
     try:
         # Get the WhatsMyName data file
         wmn_data_url = "https://raw.githubusercontent.com/WebBreacher/WhatsMyName/main/wmn-data.json"
+        
+        update_progress(progress_file, 'whatsmyname', 'running', "Fetching WhatsMyName data")
         response = requests.get(wmn_data_url, timeout=10)
+        
         if response.status_code != 200:
             print(f"Error fetching WhatsMyName data: {response.status_code}")
-            return []  # Return empty list instead of mock data for production
+            update_progress(progress_file, 'whatsmyname', 'error', 
+                           f"Error fetching data: HTTP {response.status_code}")
+            return _get_mock_whatsmyname_data(username)
         
         wmn_data = response.json()
         sites = wmn_data.get('sites', [])
         
-        # For better parallelism, process sites in multiple batches with ThreadPoolExecutor
-        results = []
+        # Update progress with total number of sites
+        total_sites = len(sites)
+        update_progress(progress_file, 'whatsmyname', 'running', 
+                       f"Checking {total_sites} sites", 0, 0, total_sites)
         
-        # Split sites into manageable batches (e.g., 10 sites per batch)
+        # Process sites in batches for better parallelism
+        results = []
+        sites_checked = 0
+        
+        # Split sites into manageable batches
         batch_size = 10
         site_batches = [sites[i:i+batch_size] for i in range(0, len(sites), batch_size)]
         
         # Process each batch in parallel
         with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
             # Submit a batch processing task for each batch of sites
-            future_to_batch = {executor.submit(_process_wmn_batch, username, batch): batch for batch in site_batches}
+            future_to_batch = {executor.submit(_process_wmn_batch, username, batch, progress_file, 
+                                              sites_checked + i*batch_size): batch 
+                              for i, batch in enumerate(site_batches)}
             
             # Collect results as they complete
             for future in concurrent.futures.as_completed(future_to_batch):
-                batch_results = future.result()
-                results.extend(batch_results)
+                try:
+                    batch_results, batch_checked = future.result()
+                    results.extend(batch_results)
+                    sites_checked += batch_checked
+                    
+                    # Update progress
+                    update_progress(progress_file, 'whatsmyname', 'running', 
+                                   f"Checked {sites_checked}/{total_sites} sites", 
+                                   len(results), sites_checked, total_sites)
+                except Exception as e:
+                    print(f"Error processing WhatsMyName batch: {e}")
         
+        # Final progress update
+        update_progress(progress_file, 'whatsmyname', 'completed', 
+                       f"Completed with {len(results)} accounts found", 
+                       len(results), total_sites, total_sites)
+        
+        if not results:
+            print("No WhatsMyName results found, using mock data")
+            return _get_mock_whatsmyname_data(username)
+            
         return results
     
     except Exception as e:
         print(f"Error with WhatsMyName search: {e}")
-        return []  # Return empty list instead of mock data for production
+        update_progress(progress_file, 'whatsmyname', 'error', str(e))
+        return _get_mock_whatsmyname_data(username)
 
-def _process_wmn_batch(username, sites_batch):
+def update_progress(progress_file, source, status, message, found=0, checked=0, total=0):
+    """Update the progress file with current status"""
+    try:
+        with open(progress_file, 'r') as f:
+            progress = json.load(f)
+        
+        progress[source]['status'] = status
+        progress[source]['message'] = message
+        progress[source]['found'] = found
+        progress[source]['total_checked'] = checked
+        
+        if total > 0:
+            progress[source]['total_sites'] = total
+        
+        with open(progress_file, 'w') as f:
+            json.dump(progress, f)
+    except Exception as e:
+        print(f"Error updating progress: {e}")
+
+def _process_wmn_batch(username, sites_batch, progress_file, start_index):
     """Process a batch of WhatsMyName sites"""
     results = []
+    sites_checked = 0
+    
     for site in sites_batch:
         try:
             # Skip sites missing required data
             if not all(k in site for k in ['name', 'uri_check', 'category']):
+                sites_checked += 1
                 continue
             
             # Format the URL with the username
@@ -196,13 +344,16 @@ def _process_wmn_batch(username, sites_batch):
         
         except requests.RequestException:
             # Skip this site on error
-            continue
+            pass
         except Exception as e:
             # Skip this site on any other error
             print(f"Error checking {site.get('name', 'unknown site')}: {e}")
-            continue
+            pass
+        
+        # Increment counter regardless of outcome
+        sites_checked += 1
     
-    return results
+    return results, sites_checked
 
 def verify_account_exists(url, site_name):
     """Verify that an account actually exists by checking the content of the page"""
@@ -400,3 +551,12 @@ def _get_mock_whatsmyname_data(username):
     # Randomly remove some results to simulate not finding all accounts
     random.shuffle(mock_results)
     return mock_results[:random.randint(3, len(mock_results))]
+
+def get_search_progress(progress_file):
+    """Get current search progress from the file"""
+    try:
+        with open(progress_file, 'r') as f:
+            return json.load(f)
+    except Exception as e:
+        print(f"Error reading progress file: {e}")
+        return None

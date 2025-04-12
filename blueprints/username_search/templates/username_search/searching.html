@@ -78,9 +78,9 @@
                     <span id="sherlock-counter" class="text-gray-300">Searching...</span>
                 </div>
                 <div class="w-full bg-gray-700 rounded-full h-4">
-                    <div id="sherlock-progress" class="progress-bar-sherlock h-4 rounded-full" style="width: 10%"></div>
+                    <div id="sherlock-progress" class="progress-bar-sherlock h-4 rounded-full" style="width: 0%"></div>
                 </div>
-                <p class="text-sm text-gray-400 mt-1">Searching across hundreds of popular platforms</p>
+                <p id="sherlock-message" class="text-sm text-gray-400 mt-1">Initializing Sherlock search...</p>
             </div>
             
             <!-- WhatsMyName Progress -->
@@ -95,9 +95,9 @@
                     <span id="whatsmyname-counter" class="text-gray-300">Searching...</span>
                 </div>
                 <div class="w-full bg-gray-700 rounded-full h-4">
-                    <div id="whatsmyname-progress" class="progress-bar-whatsmyname h-4 rounded-full" style="width: 10%"></div>
+                    <div id="whatsmyname-progress" class="progress-bar-whatsmyname h-4 rounded-full" style="width: 0%"></div>
                 </div>
-                <p class="text-sm text-gray-400 mt-1">Checking specialized and niche sites</p>
+                <p id="whatsmyname-message" class="text-sm text-gray-400 mt-1">Initializing WhatsMyName search...</p>
             </div>
             
             <!-- Cancel Button -->
@@ -197,31 +197,31 @@
         // Update every 10 seconds
         setInterval(updateTimeDisplay, 10000);
         
-        // Animate progress bars
-        function animateProgress() {
-            const sherlockProgress = document.getElementById('sherlock-progress');
-            const whatsmynameProgress = document.getElementById('whatsmyname-progress');
-            
-            let sherlockWidth = 10;
-            let whatsmynameWidth = 10;
-            
-            const interval = setInterval(() => {
-                if (sherlockWidth < 95) {
-                    sherlockWidth += 0.5;
-                    sherlockProgress.style.width = `${sherlockWidth}%`;
-                }
-                
-                if (whatsmynameWidth < 90) {
-                    whatsmynameWidth += 0.2;
-                    whatsmynameProgress.style.width = `${whatsmynameWidth}%`;
-                }
-            }, 500);
-            
-            return interval;
-        }
+        // Progress tracking variables
+        let sherlockComplete = false;
+        let whatsmynameComplete = false;
+        let progressInterval;
+        let progressFile = '';
+        let searchTimedOut = false;
+        let searchTimeout;
         
-        // Start progress animation
-        const progressInterval = animateProgress();
+        // Set a timeout for the entire search process (5 minutes)
+        searchTimeout = setTimeout(function() {
+            searchTimedOut = true;
+            document.getElementById('search-status-text').textContent = 'Search timed out. Using available results...';
+            document.getElementById('search-status-text').classList.remove('animated-pulse');
+            
+            // Force progress bars to 100%
+            document.getElementById('sherlock-progress').style.width = '100%';
+            document.getElementById('whatsmyname-progress').style.width = '100%';
+            
+            if (progressInterval) {
+                clearInterval(progressInterval);
+            }
+        }, 5 * 60 * 1000); // 5 minutes
+        
+        // Start the search process
+        console.log("Starting username search process for:", username);
         
         // Start the actual search using AJAX
         fetch('{{ url_for("username_search.process_search") }}', {
@@ -233,12 +233,20 @@
                 'username': username
             })
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
-            // Stop the progress animation
-            clearInterval(progressInterval);
+            console.log("Search completed:", data);
+            
+            // Clear search timeout
+            clearTimeout(searchTimeout);
             
             if (data.success) {
+                // Search completed successfully
                 // Update progress bars to 100%
                 document.getElementById('sherlock-progress').style.width = '100%';
                 document.getElementById('whatsmyname-progress').style.width = '100%';
@@ -253,27 +261,126 @@
                 document.getElementById('search-status-text').textContent = 'Search completed!';
                 document.getElementById('search-status-text').classList.remove('animated-pulse');
                 
-                // Convert datetime objects to strings for JSON
-                const results = data.results;
-                results.scan_date = new Date().toISOString();
-                
                 // Submit form with results to show results page
-                document.getElementById('results-input').value = JSON.stringify(results);
+                document.getElementById('results-input').value = JSON.stringify(data.results);
                 document.getElementById('results-form').submit();
+                
+                // Clear the progress checking interval if it exists
+                if (progressInterval) {
+                    clearInterval(progressInterval);
+                }
             } else {
                 // Handle error
                 document.getElementById('sherlock-progress').style.width = '100%';
                 document.getElementById('whatsmyname-progress').style.width = '100%';
                 document.getElementById('search-status-text').textContent = 'Error: ' + (data.error || 'Unknown error');
                 document.getElementById('search-status-text').classList.remove('animated-pulse');
+                
+                // Clear the progress checking interval if it exists
+                if (progressInterval) {
+                    clearInterval(progressInterval);
+                }
+                
+                // Redirect back to index after 3 seconds
+                setTimeout(function() {
+                    window.location.href = "{{ url_for('username_search.index') }}";
+                }, 3000);
             }
         })
         .catch(error => {
+            // Clear search timeout
+            clearTimeout(searchTimeout);
+            
             // Handle network error
-            clearInterval(progressInterval);
+            console.error("Error in search:", error);
             document.getElementById('search-status-text').textContent = 'Error: ' + error.message;
             document.getElementById('search-status-text').classList.remove('animated-pulse');
+            
+            // Clear the progress checking interval if it exists
+            if (progressInterval) {
+                clearInterval(progressInterval);
+            }
+            
+            // Redirect back to index after 3 seconds
+            setTimeout(function() {
+                window.location.href = "{{ url_for('username_search.index') }}";
+            }, 3000);
         });
+        
+        // Poll for progress updates
+        progressInterval = setInterval(function() {
+            // If both searches are complete or search timed out, stop polling
+            if ((sherlockComplete && whatsmynameComplete) || searchTimedOut) {
+                clearInterval(progressInterval);
+                return;
+            }
+            
+            // Check progress
+            fetch(`{{ url_for('username_search.check_progress') }}?progress_file=${progressFile}`)
+                .then(response => response.json())
+                .then(progress => {
+                    if (progress.error) {
+                        console.log("Progress error:", progress.error);
+                        return;
+                    }
+                    
+                    // Update Sherlock progress
+                    if (progress.sherlock) {
+                        const sherlockStatus = progress.sherlock.status;
+                        const sherlockMessage = progress.sherlock.message || '';
+                        
+                        // Update message
+                        document.getElementById('sherlock-message').textContent = sherlockMessage;
+                        
+                        // Update progress bar
+                        if (progress.sherlock.total_sites > 0) {
+                            const percentage = Math.min(100, Math.round((progress.sherlock.total_checked / progress.sherlock.total_sites) * 100));
+                            document.getElementById('sherlock-progress').style.width = `${percentage}%`;
+                        }
+                        
+                        // Update counter
+                        document.getElementById('sherlock-counter').textContent = 
+                            `${progress.sherlock.found || 0} found / ${progress.sherlock.total_checked || 0} checked`;
+                        
+                        // Check if complete
+                        if (sherlockStatus === 'completed' || sherlockStatus === 'error') {
+                            sherlockComplete = true;
+                        }
+                    }
+                    
+                    // Update WhatsMyName progress
+                    if (progress.whatsmyname) {
+                        const whatsmynameStatus = progress.whatsmyname.status;
+                        const whatsmynameMessage = progress.whatsmyname.message || '';
+                        
+                        // Update message
+                        document.getElementById('whatsmyname-message').textContent = whatsmynameMessage;
+                        
+                        // Update progress bar
+                        if (progress.whatsmyname.total_sites > 0) {
+                            const percentage = Math.min(100, Math.round((progress.whatsmyname.total_checked / progress.whatsmyname.total_sites) * 100));
+                            document.getElementById('whatsmyname-progress').style.width = `${percentage}%`;
+                        }
+                        
+                        // Update counter
+                        document.getElementById('whatsmyname-counter').textContent = 
+                            `${progress.whatsmyname.found || 0} found / ${progress.whatsmyname.total_checked || 0} checked`;
+                        
+                        // Check if complete
+                        if (whatsmynameStatus === 'completed' || whatsmynameStatus === 'error') {
+                            whatsmynameComplete = true;
+                        }
+                    }
+                    
+                    // Update overall status
+                    if (sherlockComplete && whatsmynameComplete) {
+                        document.getElementById('search-status-text').textContent = 'Processing results...';
+                    }
+                })
+                .catch(error => {
+                    console.error("Error checking progress:", error);
+                });
+        }, 1000); // Check every second
     });
 </script>
 {% endblock %}
