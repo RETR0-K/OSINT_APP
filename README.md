@@ -196,9 +196,6 @@ osint_tracker/
 - The application includes session management and user authentication
 - Scans older than 30 days are automatically deleted by default
 
-## License
-
-[MIT License](LICENSE)
 
 ## Acknowledgements
 
