@@ -2,7 +2,6 @@
 
 OSINT Tracker is a web-based tool for discovering and analyzing digital footprints using Open Source Intelligence techniques. This application helps security professionals, privacy researchers, and individuals assess their online exposure and security risks.
 
-![OSINT Tracker Dashboard](https://github.com/RETR0-K/OSINT_APP/blob/37ee4a517687aa76f729dd42692a08f56de1ca68/static/images/dashboard.png)
 
 ## Features
 
